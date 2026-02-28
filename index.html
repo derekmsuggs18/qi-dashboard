@@ -492,7 +492,7 @@ body{background:var(--bg);color:var(--tx);font-family:'DM Sans',sans-serif;min-h
     <div style="font-family:'DM Mono';font-size:.52rem;color:var(--tm);letter-spacing:.13em;text-transform:uppercase;margin-bottom:8px">QI TREND</div>
     <div class="modal-cw"><canvas id="am-chart"></canvas></div>
     <div class="ai-box" style="position:relative" id="am-ai">
-      <div class="ai-label"><div class="ai-dot"></div>AI ACCOUNT NARRATIVE</div>
+      <div class="ai-label">◈ ACCOUNT SUMMARY</div>
       <div class="ai-text ai-loading" id="am-ai-text">⟳ Generating…</div>
     </div>
   </div>
@@ -640,8 +640,8 @@ body{background:var(--bg);color:var(--tx);font-family:'DM Sans',sans-serif;min-h
         <select class="rsel" id="rep-fil-wl" onchange="renderWL()"><option value="">All</option></select>
         <span class="rfil-lbl" style="margin-left:8px">Sort:</span>
         <select class="rsel" id="sort-wl" onchange="renderWL()">
-          <option value="qi-worst">QI Worst First</option>
           <option value="sales">Sales ↓</option>
+          <option value="qi-worst">QI Worst First</option>
           <option value="over-bench">% Over Benchmark</option>
         </select>
         <span class="rfil-lbl" style="margin-left:8px;color:var(--tm)" id="wl-count"></span>
@@ -848,36 +848,127 @@ function renderKPIs(){
 function renderNarr(){
   const accts=curAccts().filter(a=>a.sales>0),b=bench(),sales=curSales();
   const label=CUR==='combined'?MONTHS.map(fmtM).join(' + '):fmtM(CUR);
+  const isComb=CUR==='combined';
   if(!accts.length){document.getElementById('narr-grid').innerHTML='<div style="color:var(--tm);font-family:DM Mono;font-size:.75rem;grid-column:span 3">No transacting accounts</div>';return;}
-  const top=[...accts].sort((a,b2)=>b2.sales-a.sales)[0];
-  const worst=[...accts].sort((a,b2)=>b2.qi-a.qi)[0];
-  const over=accts.filter(a=>a.qi>b),exc=accts.filter(a=>a.qi<=5);
+
   const prevM=MONTHS[MONTHS.indexOf(CUR)-1];
-  const pSales=prevM?DATA[prevM].companySales:null;
-  const trendStr=pSales!=null?((sales-pSales)/pSales*100).toFixed(1):null;
-  const trendHtml=trendStr!=null?(parseFloat(trendStr)>=0?`<span class="hig">+${trendStr}% vs ${fmtM(prevM)}</span>`:`<span class="hib">${trendStr}% vs ${fmtM(prevM)}</span>`):'';
-  const chronicCnt=accts.filter(a=>(a.monthsAbove||0)>=CHRONIC_MONTHS).length;
+  const p=prevM?DATA[prevM]:null;
+  const pSales=p?p.companySales:null;
+  const trendPct=pSales?((sales-pSales)/pSales*100):null;
+
+  // ── SALES BOX: surface meaningful movers ──
+  let salesHTML='';
+  const topBySales=[...accts].sort((a,b2)=>b2.sales-a.sales);
+
+  if(!isComb && prevM){
+    // Find meaningful movers — accounts with $15K+ in both months
+    const pd=DATA[prevM].accts||DATA[prevM].accounts||[];
+    const prevMap={};
+    (pd).forEach?.(a=>{if(a.sales>0)prevMap[a.alpha]=a;});
+
+    const movers=accts.filter(a=>prevMap[a.alpha]&&prevMap[a.alpha].sales>=15000&&a.sales>=15000)
+      .map(a=>({...a,chg:(a.sales-prevMap[a.alpha].sales)/prevMap[a.alpha].sales*100,prevSales:prevMap[a.alpha].sales}))
+      .filter(a=>Math.abs(a.chg)>=20);
+
+    const gainers=movers.filter(m=>m.chg>0).sort((a,b2)=>b2.chg-a.chg).slice(0,2);
+    const decliners=movers.filter(m=>m.chg<0).sort((a,b2)=>a.chg-b2.chg).slice(0,2);
+    const newAccts=accts.filter(a=>!prevMap[a.alpha]&&a.sales>=15000).sort((a,b2)=>b2.sales-a.sales).slice(0,2);
+
+    const trendLine=trendPct!==null?`${fmtM(CUR)} sales <span class="${trendPct>=0?'hig':'hib'}">${trendPct>=0?'+':''}${trendPct.toFixed(1)}%</span> vs ${fmtM(prevM)} at <span class="hi">${f$(sales)}</span>. `:'';
+
+    let moverLines='';
+    if(gainers.length){
+      moverLines+=`<span class="hig">↑ Gaining:</span> ${gainers.map(g=>`<span class="hig">${g.dealer.split(' ')[0]} (${g.alpha})</span> +${g.chg.toFixed(0)}% to ${f$(g.sales)}`).join(', ')}. `;
+    }
+    if(decliners.length){
+      moverLines+=`<span class="hib">↓ Declining:</span> ${decliners.map(d=>`<span class="hib">${d.dealer.split(' ')[0]} (${d.alpha})</span> ${d.chg.toFixed(0)}% to ${f$(d.sales)}`).join(', ')}. `;
+    }
+    if(newAccts.length){
+      moverLines+=`<span class="hiw">New this month:</span> ${newAccts.map(a=>`${a.dealer.split(' ')[0]} (${a.alpha}) at ${f$(a.sales)}`).join(', ')}. `;
+    }
+    if(!moverLines){
+      moverLines=`Top account: <span class="hig">${topBySales[0].dealer.slice(0,20)} (${topBySales[0].alpha})</span> at <span class="hi">${f$(topBySales[0].sales)}</span>. `;
+    }
+    salesHTML=trendLine+moverLines;
+  } else {
+    // Combined or no prior month
+    const top=topBySales[0];
+    salesHTML=`${label} total: <span class="hi">${f$(sales)}</span>. Top account: <span class="hig">${top.dealer.slice(0,20)} (${top.alpha})</span> at <span class="hi">${f$(top.sales)}</span>. <span class="hi">${accts.length}</span> accounts transacting.`;
+  }
+
+  // ── QUALITY BOX: trend-focused ──
+  let qualHTML='';
+  const over=accts.filter(a=>a.qi>b);
+  const exc=accts.filter(a=>a.qi<=5);
+
+  if(!isComb && prevM){
+    const pd2=DATA[prevM].accounts||[];
+    const prevMap2={};
+    pd2.forEach(a=>{if(a.sales>0)prevMap2[a.alpha]=a;});
+
+    // Accounts that crossed benchmark (got worse this month)
+    const newlyAbove=accts.filter(a=>a.qi>b&&prevMap2[a.alpha]&&prevMap2[a.alpha].qi<=DATA[prevM].benchmark&&a.sales>=20000);
+    // Accounts that came back under
+    const newlyBelow=accts.filter(a=>a.qi<=b&&prevMap2[a.alpha]&&prevMap2[a.alpha].qi>DATA[prevM].benchmark&&a.sales>=20000);
+    // QI benchmark movement
+    const bchg=p?b-p.benchmark:null;
+    const bLine=bchg!==null?`Benchmark <span class="${bchg<=0?'hig':'hib'}">${bchg<=0?'improved':'rose'} ${Math.abs(bchg).toFixed(2)} pts</span> to <span class="hiw">${b.toFixed(2)}</span>. `:
+      `Benchmark: <span class="hiw">${b.toFixed(2)}</span>. `;
+
+    let crossLines='';
+    if(newlyAbove.length){
+      crossLines+=`<span class="hib">Crossed above benchmark:</span> ${newlyAbove.slice(0,2).map(a=>`${a.alpha} (QI ${a.qi.toFixed(1)})`).join(', ')}. `;
+    }
+    if(newlyBelow.length){
+      crossLines+=`<span class="hig">Returned below benchmark:</span> ${newlyBelow.slice(0,2).map(a=>`${a.alpha} (QI ${a.qi.toFixed(1)})`).join(', ')}. `;
+    }
+    if(!crossLines){
+      crossLines=`<span class="hig">${exc.length}</span> accounts at excellent QI ≤5. <span class="${over.length>accts.length*.35?'hib':'hiw'}">${over.length}</span> above benchmark.`;
+    }
+    qualHTML=bLine+crossLines;
+  } else {
+    qualHTML=`Benchmark: <span class="hiw">${b.toFixed(2)}</span>. <span class="hig">${exc.length} (${(exc.length/accts.length*100).toFixed(0)}%)</span> at excellent QI. <span class="${over.length>accts.length*.35?'hib':'hiw'}">${over.length}</span> above benchmark.`;
+  }
+
+  // ── WATCH LIST BOX: spotlight high-volume accounts above benchmark ──
+  let watchHTML='';
+  const highVolAbove=[...over].filter(a=>a.sales>=50000).sort((a,b2)=>b2.sales-a.sales);
+  const chronicCnt=isComb?accts.filter(a=>(a.monthsAbove||0)>=CHRONIC_MONTHS).length:0;
+
+  if(highVolAbove.length>=2){
+    const a1=highVolAbove[0], a2=highVolAbove[1];
+    const risk1=((a1.qi-b)/b*100).toFixed(0);
+    const risk2=((a2.qi-b)/b*100).toFixed(0);
+    watchHTML=`High-volume partnerships needing attention: <span class="hib">${a1.dealer.slice(0,18)} (${a1.alpha})</span> at <span class="hi">${f$(a1.sales)}</span> with QI <span class="hib">${fqi(a1.qi)}</span> — ${risk1}% over benchmark. <span class="hib">${a2.dealer.slice(0,18)} (${a2.alpha})</span> at <span class="hi">${f$(a2.sales)}</span> with QI <span class="hib">${fqi(a2.qi)}</span> — ${risk2}% over benchmark.`;
+    if(highVolAbove.length>2) watchHTML+=` Plus ${highVolAbove.length-2} more high-volume accounts above benchmark.`;
+  } else if(highVolAbove.length===1){
+    const a1=highVolAbove[0];
+    const risk1=((a1.qi-b)/b*100).toFixed(0);
+    watchHTML=`Key watch account: <span class="hib">${a1.dealer.slice(0,20)} (${a1.alpha})</span> — <span class="hi">${f$(a1.sales)}</span> in sales with QI <span class="hib">${fqi(a1.qi)}</span>, ${risk1}% over benchmark. This is a partnership worth a direct quality conversation.`;
+  } else if(over.length>0){
+    const worst=over.sort((a,b2)=>b2.qi-a.qi)[0];
+    watchHTML=`Worst QI: <span class="hib">${worst.dealer.slice(0,20)} (${worst.alpha})</span> at QI <span class="hib">${fqi(worst.qi)}</span>. `;
+    if(isComb&&chronicCnt) watchHTML+=`<span class="hib">${chronicCnt} chronic offenders</span> above benchmark ${CHRONIC_MONTHS}+ months.`;
+    else watchHTML+=`${over.length} total accounts above the ${b.toFixed(2)} benchmark.`;
+  } else {
+    watchHTML=`<span class="hig">All transacting accounts are at or below the ${b.toFixed(2)} benchmark.</span> Excellent quality health across the board this period.`;
+  }
+
   document.getElementById('narr-grid').innerHTML=`
-    <div class="ni"><div class="nil">Sales Performance</div><div class="nit">
-      ${label} total: <span class="hi">${f$(sales)}</span>${trendStr?' · '+trendHtml:''}.
-      Top account <span class="hig">${top.dealer.slice(0,22)} (${top.alpha})</span> at <span class="hi">${f$(top.sales)}</span>. <span class="hi">${accts.length}</span> accounts transacting.
-    </div></div>
-    <div class="ni"><div class="nil">Quality Snapshot</div><div class="nit">
-      Benchmark: <span class="hiw">${b.toFixed(2)}</span> per $100K.
-      <span class="hig">${exc.length} (${(exc.length/accts.length*100).toFixed(0)}%)</span> at excellent QI (≤5).
-      <span class="${over.length>accts.length*.35?'hib':'hiw'}">${over.length}</span> above benchmark.
-    </div></div>
-    <div class="ni"><div class="nil">Watch Items</div><div class="nit">
-      Worst: <span class="hib">${worst.dealer.slice(0,18)} (${worst.alpha})</span> QI <span class="hib">${fqi(worst.qi)}</span>.
-      ${CUR==='combined'&&chronicCnt?`<span class="hib">${chronicCnt} chronic offenders</span> above benchmark ${CHRONIC_MONTHS}+ months.`:over.slice(0,2).map(a=>`<span class="hiw">${a.alpha}</span>`).join(', ')+(over.length>2?` +${over.length-2} more`:'')+' on watch list.'}
-    </div></div>`;
+    <div class="ni"><div class="nil">Sales Performance</div><div class="nit">${salesHTML}</div></div>
+    <div class="ni"><div class="nil">Quality Trends</div><div class="nit">${qualHTML}</div></div>
+    <div class="ni"><div class="nil">Watch List Spotlight</div><div class="nit">${watchHTML}</div></div>`;
 }
 
 // ── CHRONIC OFFENDERS ────────────────────
 function renderChronic(){
   const s=document.getElementById('chronic-section');
   if(CUR!=='combined'){s.style.display='none';return;}
-  const accts=curAccts().filter(a=>a.sales>0&&(a.monthsAbove||0)>=CHRONIC_MONTHS).sort((a,b)=>b.sales-a.sales);
+  const accts=curAccts().filter(a=>a.sales>0&&(a.monthsAbove||0)>=CHRONIC_MONTHS).sort((a,b)=>{
+    const scoreA=(a.sales/100000)*a.qi;
+    const scoreB=(b.sales/100000)*b.qi;
+    return scoreB-scoreA;
+  });
   if(!accts.length){s.style.display='none';return;}
   s.style.display='block';
   const b=bench();
@@ -1220,36 +1311,11 @@ function openAcctModal(alpha){
 function closeAcctModal(){document.getElementById('acct-modal').classList.remove('open');}
 document.getElementById('acct-modal').addEventListener('click',e=>{if(e.target===e.currentTarget)closeAcctModal();});
 
-async function generateAcctNarrative(a,transKeys,totalSales,wtdQI,monthsAbove,latestB){
+function generateAcctNarrative(a,transKeys,totalSales,wtdQI,monthsAbove,latestB){
   const el=document.getElementById('am-ai-text');
-  const monthSummary=transKeys.map(m=>`${fmtM(m)}: Sales ${f$(a.months[m].sales)}, QI ${a.months[m].qi.toFixed(2)} (benchmark ${a.months[m].bench.toFixed(2)})`).join('; ');
-  const latestM=transKeys[transKeys.length-1],prevM=transKeys[transKeys.length-2];
-  const prompt=`You are a quality analyst for a cabinet distributor. Write a concise 3-sentence account narrative for a sales manager.
-
-Account: ${a.dealer} (${a.alpha})
-Salesman: ${a.salesman} | State: ${a.state} | Status: ${a.status}
-Active: ${transKeys.length} of ${MONTHS.length} months (${transKeys.map(m=>fmtM(m)).join(', ')})
-Monthly data: ${monthSummary}
-7-month total sales: ${f$(totalSales)} | Weighted QI: ${wtdQI.toFixed(2)} | Current benchmark: ${latestB.toFixed(2)}
-Months above benchmark: ${monthsAbove} of ${transKeys.length}
-${latestM&&prevM?`Recent trend: QI moved from ${a.months[prevM].qi.toFixed(2)} (${fmtM(prevM)}) to ${a.months[latestM].qi.toFixed(2)} (${fmtM(latestM)})`:''}
-
-Write exactly 3 sentences. Sentence 1: sales volume and purchase consistency. Sentence 2: quality performance vs benchmark — be specific about whether they are consistently above, improving, or a chronic problem. Sentence 3: one clear, actionable recommendation or concern for the sales manager. No bullets, no headers, plain prose.`;
-  try{
-    const resp=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',
-      headers:{
-        'Content-Type':'application/json',
-        'x-api-key':ANTHROPIC_KEY,
-        'anthropic-version':'2023-06-01',
-        'anthropic-dangerous-direct-browser-access':'true'
-      },
-      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:220,messages:[{role:'user',content:prompt}]})});
-    const data=await resp.json();
-    el.className='ai-text';el.textContent=data.content?.[0]?.text||'Narrative unavailable.';
-  }catch(e){
-    el.className='ai-text';el.style.color='var(--tm)';
-    el.textContent='AI narrative requires hosted environment (GitHub Pages or Netlify).';
-  }
+  if(!el) return;
+  el.className='ai-text';
+  el.textContent=buildAcctSummary(a,transKeys,totalSales,wtdQI,monthsAbove,latestB);
 }
 
 // ── SEARCH ───────────────────────────────
@@ -1310,41 +1376,113 @@ document.getElementById('kpi-modal').addEventListener('click',e=>{if(e.target===
 function exportSummary(){
   const b=bench(),sales=curSales(),accts=curAccts().filter(a=>a.sales>0);
   const period=CUR==='combined'?MONTHS.map(fmtM).join(' + '):fmtM(CUR);
-  const top5=accts.sort((a,b2)=>b2.sales-a.sales).slice(0,5);
-  const wl=accts.filter(a=>a.qi>b).sort((a,b2)=>b2.qi-a.qi).slice(0,5);
+  const isComb=CUR==='combined';
+  const top5=[...accts].sort((a,b2)=>b2.sales-a.sales).slice(0,5);
+  const wl=[...accts].filter(a=>a.qi>b).sort((a,b2)=>b2.qi-a.qi).slice(0,5);
+  const exc=accts.filter(a=>a.qi<=5).length;
+  const chronic=accts.filter(a=>(a.monthsAbove||0)>=CHRONIC_MONTHS);
+
+  // Build period narrative
+  let periodNarrative='';
+  if(isComb){
+    const totalSales=MONTHS.reduce((s,m)=>s+DATA[m].companySales,0);
+    const avgMonthly=totalSales/MONTHS.length;
+    const bestMonth=MONTHS.reduce((best,m)=>DATA[m].companySales>DATA[best].companySales?m:best,MONTHS[0]);
+    const worstMonth=MONTHS.reduce((worst,m)=>DATA[m].companySales<DATA[worst].companySales?m:worst,MONTHS[0]);
+    const qiTrend=MONTHS[MONTHS.length-1]&&MONTHS[0]?DATA[MONTHS[MONTHS.length-1]].benchmark-DATA[MONTHS[0]].benchmark:0;
+    const qiDir=Math.abs(qiTrend)<0.5?'remained stable':qiTrend>0?`increased by ${qiTrend.toFixed(2)} points`:`improved by ${Math.abs(qiTrend).toFixed(2)} points`;
+    const overBench=accts.filter(a=>a.qi>b).length;
+    periodNarrative=`Over the ${MONTHS.length}-month period from ${fmtM(MONTHS[0])} through ${fmtM(MONTHS[MONTHS.length-1])}, total company sales reached <strong>${f$(totalSales)}</strong> with an average of <strong>${f$(avgMonthly)}</strong> per month. The strongest month was ${fmtM(bestMonth)} at ${f$(DATA[bestMonth].companySales)}, while ${fmtM(worstMonth)} was the softest at ${f$(DATA[worstMonth].companySales)}. The quality benchmark ${qiDir} over the period, ending at ${b.toFixed(2)} replacements per $100K. Of ${accts.length} qualified accounts, ${overBench} (${(overBench/accts.length*100).toFixed(0)}%) are currently above benchmark${chronic.length?`, and ${chronic.length} are classified as chronic offenders — accounts above benchmark in 4 or more months`:''}. ${exc} accounts (${(exc/accts.length*100).toFixed(0)}%) achieved excellent QI at or below 5.`;
+  } else {
+    const prevM=MONTHS[MONTHS.indexOf(CUR)-1];
+    const salesChg=prevM?((sales-DATA[prevM].companySales)/DATA[prevM].companySales*100):null;
+    const benchChg=prevM?DATA[CUR].benchmark-DATA[prevM].benchmark:null;
+    const overBench=accts.filter(a=>a.qi>b).length;
+    periodNarrative=`For ${fmtM(CUR)}, company sales totaled <strong>${f$(sales)}</strong>${salesChg!==null?` — <strong>${salesChg>=0?'+':''}${salesChg.toFixed(1)}%</strong> vs ${fmtM(prevM)}`:''}. The quality benchmark came in at <strong>${b.toFixed(2)}</strong> replacements per $100K${benchChg!==null?` (${benchChg>=0?'+':''}${benchChg.toFixed(2)} vs prior month)`:''}. ${accts.length} accounts were active this month, with ${overBench} (${(overBench/accts.length*100).toFixed(0)}%) above benchmark and ${exc} (${(exc/accts.length*100).toFixed(0)}%) achieving excellent QI at or below 5.`;
+  }
+
+  // Rep summary for export
+  const repMap={};
+  accts.forEach(a=>{
+    if(!repMap[a.salesman])repMap[a.salesman]={sales:0,repl:0,n:0};
+    repMap[a.salesman].sales+=a.sales;repMap[a.salesman].repl+=a.repl;repMap[a.salesman].n++;
+  });
+  const repRows=Object.entries(repMap).map(([rep,v])=>({rep,sales:v.sales,qi:v.sales>0?v.repl/v.sales*100000:0,n:v.n}))
+    .sort((a,b2)=>b2.sales-a.sales);
+
   const w=window.open('','_blank');
-  w.document.write(`<!DOCTYPE html><html><head><title>QI Summary ${period}</title>
-  <style>body{font-family:Arial,sans-serif;padding:36px;color:#1a1a2e;max-width:900px;margin:0 auto;}
-  h1{font-size:22px;border-bottom:3px solid #e8ff47;padding-bottom:8px;margin-bottom:4px;}
-  h2{font-size:14px;color:#555;margin:0 0 20px;}
-  h3{font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;margin:22px 0 8px;color:#333;}
-  .krow{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:16px 0;}
-  .kc{border:1px solid #e0e0e0;border-radius:4px;padding:12px 14px;background:#fafafa;}
-  .kl{font-size:9px;text-transform:uppercase;letter-spacing:.12em;color:#888;margin-bottom:3px;}
-  .kv{font-size:22px;font-weight:700;}
-  table{width:100%;border-collapse:collapse;font-size:12px;margin-bottom:16px;}
-  th{background:#f5f5f5;padding:7px 10px;text-align:left;border-bottom:2px solid #e0e0e0;font-size:10px;text-transform:uppercase;letter-spacing:.1em;}
-  td{padding:6px 10px;border-bottom:1px solid #eee;}
-  .foot{font-size:10px;color:#aaa;margin-top:24px;border-top:1px solid #eee;padding-top:12px;}
-  @media print{button{display:none}}</style></head><body>
-  <h1>Quality Index Dashboard — Executive Summary</h1>
-  <h2>${period} · Generated ${new Date().toLocaleDateString()}</h2>
+  w.document.write(`<!DOCTYPE html><html><head><title>QI Summary — ${period}</title>
+  <style>
+    body{font-family:Arial,sans-serif;padding:36px;color:#1a1a2e;max-width:960px;margin:0 auto;font-size:13px;}
+    h1{font-size:20px;border-bottom:3px solid #1a1a2e;padding-bottom:8px;margin-bottom:4px;letter-spacing:.04em;}
+    h2{font-size:11px;color:#888;margin:0 0 20px;letter-spacing:.08em;text-transform:uppercase;}
+    h3{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.12em;margin:24px 0 8px;color:#333;border-left:3px solid #e8ff47;padding-left:8px;}
+    .period-box{background:#f8f9fa;border:1px solid #e0e0e0;border-radius:4px;padding:14px 18px;margin:16px 0;font-size:12px;line-height:1.7;color:#333;}
+    .krow{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin:14px 0;}
+    .kc{border:1px solid #e0e0e0;border-radius:4px;padding:11px 13px;background:#fafafa;border-top:3px solid #1a1a2e;}
+    .kl{font-size:8px;text-transform:uppercase;letter-spacing:.14em;color:#888;margin-bottom:3px;}
+    .kv{font-size:20px;font-weight:700;letter-spacing:.02em;}
+    table{width:100%;border-collapse:collapse;font-size:11.5px;margin-bottom:6px;}
+    th{background:#1a1a2e;color:#fff;padding:7px 10px;text-align:left;font-size:9px;text-transform:uppercase;letter-spacing:.12em;font-weight:500;}
+    th.nr{text-align:right;}
+    td{padding:6px 10px;border-bottom:1px solid #eee;}
+    td.nr{text-align:right;font-family:monospace;}
+    tr:hover td{background:#f5f5f5;}
+    .bad{color:#c0392b;font-weight:600;}
+    .good{color:#27ae60;font-weight:600;}
+    .warn{color:#e67e22;}
+    .foot{font-size:9px;color:#aaa;margin-top:24px;border-top:1px solid #eee;padding-top:12px;line-height:1.7;}
+    .print-btn{background:#1a1a2e;color:#fff;border:none;padding:8px 18px;border-radius:3px;cursor:pointer;font-size:12px;margin-top:12px;}
+    @media print{.print-btn{display:none;}.krow{grid-template-columns:repeat(5,1fr);}}
+  </style></head><body>
+  <h1>QUALITY INDEX DASHBOARD — EXECUTIVE SUMMARY</h1>
+  <h2>${period} &nbsp;·&nbsp; Generated ${new Date().toLocaleDateString('en-US',{weekday:'long',year:'numeric',month:'long',day:'numeric'})}</h2>
+
+  <div class="period-box">${periodNarrative}</div>
+
   <div class="krow">
-    <div class="kc"><div class="kl">Company Sales</div><div class="kv">${f$(sales)}</div></div>
+    <div class="kc"><div class="kl">Total Sales</div><div class="kv">${f$(sales)}</div></div>
     <div class="kc"><div class="kl">QI Benchmark</div><div class="kv">${b.toFixed(2)}</div></div>
-    <div class="kc"><div class="kl">Transacting</div><div class="kv">${accts.length}</div></div>
-    <div class="kc"><div class="kl">Excellent QI ≤5</div><div class="kv">${accts.filter(a=>a.qi<=5).length}</div></div>
+    <div class="kc"><div class="kl">Active Accounts</div><div class="kv">${accts.length}</div></div>
+    <div class="kc"><div class="kl">Excellent QI ≤5</div><div class="kv">${exc}</div></div>
+    <div class="kc"><div class="kl">Above Benchmark</div><div class="kv">${accts.filter(a=>a.qi>b).length}</div></div>
   </div>
+
+  <h3>Salesman Performance</h3>
+  <table><tr><th>Salesman</th><th class="nr">Accounts</th><th class="nr">Sales</th><th class="nr">Wtd QI</th><th class="nr">vs Benchmark</th></tr>
+  ${repRows.map(r=>{const diff=((r.qi-b)/b*100);return`<tr><td>${r.rep}</td><td class="nr">${r.n}</td><td class="nr">${f$(r.sales)}</td>
+    <td class="nr ${r.qi<=5?'good':r.qi<=b?'':r.qi<=b*1.5?'warn':'bad'}">${r.qi.toFixed(2)}</td>
+    <td class="nr ${diff<=0?'good':diff<=20?'warn':'bad'}">${diff>=0?'+':''}${diff.toFixed(1)}%</td></tr>`;}).join('')}
+  </table>
+
   <h3>Top 5 Accounts by Sales</h3>
-  <table><tr><th>Alpha</th><th>Dealer</th><th>Salesman</th><th>State</th><th>Sales</th><th>QI</th></tr>
-  ${top5.map(a=>`<tr><td>${a.alpha}</td><td>${a.dealer}</td><td>${a.salesman}</td><td>${a.state}</td><td>${f$(a.sales)}</td><td>${fqi(a.qi)}</td></tr>`).join('')}
+  <table><tr><th>Alpha</th><th>Dealer</th><th>Salesman</th><th>St</th><th class="nr">Sales</th><th class="nr">Repl</th><th class="nr">QI</th></tr>
+  ${top5.map(a=>`<tr><td>${a.alpha}</td><td>${a.dealer}</td><td>${a.salesman}</td><td>${a.state}</td>
+    <td class="nr">${f$(a.sales)}</td><td class="nr">${a.repl}</td>
+    <td class="nr ${a.qi<=5?'good':a.qi<=b?'':'bad'}">${fqi(a.qi)}</td></tr>`).join('')}
   </table>
-  <h3>Top 5 Watch List (Worst QI above benchmark)</h3>
-  <table><tr><th>Alpha</th><th>Dealer</th><th>Salesman</th><th>State</th><th>Sales</th><th>QI</th><th>Over Bench</th></tr>
-  ${wl.map(a=>`<tr><td>${a.alpha}</td><td>${a.dealer}</td><td>${a.salesman}</td><td>${a.state}</td><td>${f$(a.sales)}</td><td>${fqi(a.qi)}</td><td>+${((a.qi-b)/b*100).toFixed(1)}%</td></tr>`).join('')}
+
+  <h3>Quality Watch List — Top 5 (Worst QI)</h3>
+  <table><tr><th>Alpha</th><th>Dealer</th><th>Salesman</th><th>St</th><th class="nr">Sales</th><th class="nr">QI</th><th class="nr">Over Benchmark</th></tr>
+  ${wl.map(a=>`<tr><td>${a.alpha}</td><td>${a.dealer}</td><td>${a.salesman}</td><td>${a.state}</td>
+    <td class="nr">${f$(a.sales)}</td>
+    <td class="nr bad">${fqi(a.qi)}</td>
+    <td class="nr bad">+${((a.qi-b)/b*100).toFixed(1)}%</td></tr>`).join('')}
   </table>
-  <div class="foot">Quality Index Dashboard · QI = Replacements per $100K · Lower is better · -Z accounts rolled up · Active + Cr Hold only</div>
-  <br><button onclick="window.print()">🖨 Print / Save as PDF</button>
+
+  ${chronic.length?`<h3>Chronic Offenders (${chronic.length} accounts — 4+ months above benchmark)</h3>
+  <table><tr><th>Alpha</th><th>Dealer</th><th>Salesman</th><th class="nr">Combined Sales</th><th class="nr">Wtd QI</th><th class="nr">Months Above</th></tr>
+  ${chronic.sort((a,b2)=>b2.sales-a.sales).slice(0,8).map(a=>`<tr><td>${a.alpha}</td><td>${a.dealer}</td><td>${a.salesman}</td>
+    <td class="nr">${f$(a.sales)}</td><td class="nr bad">${fqi(a.qi)}</td>
+    <td class="nr">${a.monthsAbove||0}/${a.monthCount||MONTHS.length}</td></tr>`).join('')}
+  </table>`:''}
+
+  <div class="foot">
+    Quality Index Dashboard &nbsp;·&nbsp; QI = Replacements per $100K &nbsp;·&nbsp; Lower is better<br>
+    -Z accounts rolled up into parent &nbsp;·&nbsp; Active and Credit Hold accounts included<br>
+    Combined view: accounts active in 4+ of ${MONTHS.length} months with $50K+ combined sales
+  </div>
+  <br><button class="print-btn" onclick="window.print()">🖨 Print / Save as PDF</button>
   </body></html>`);
   w.document.close();
 }
@@ -1358,6 +1496,77 @@ function showPage(id,btn){
   if(id==='tr')renderTrends();
 }
 function destroyC(id){if(CHARTS[id]){CHARTS[id].destroy();delete CHARTS[id];}}
+
+
+// ── RULE-BASED ACCOUNT SUMMARY ────────────────
+function buildAcctSummary(a, transKeys, totalSales, wtdQI, monthsAbove, latestB){
+  if(!transKeys||!transKeys.length) return 'No transaction data available for this account.';
+  const n=transKeys.length, totalM=MONTHS.length;
+  const lm=transKeys[transKeys.length-1], pm=transKeys[transKeys.length-2];
+  const lqi=lm?a.months[lm].qi:0, pqi=pm?a.months[pm].qi:0;
+  const lsales=lm?a.months[lm].sales:0;
+
+  // ── Sentence 1: Sales volume and consistency ──
+  let s1='';
+  const consistency=n===totalM?`all ${totalM} months`
+    :n>=totalM*0.7?`${n} of ${totalM} months (strong consistency)`
+    :n>=totalM*0.4?`${n} of ${totalM} months`
+    :`only ${n} of ${totalM} months`;
+  const volLabel=totalSales>=500000?'a high-volume account'
+    :totalSales>=150000?'a solid mid-tier account'
+    :totalSales>=50000?'a smaller account'
+    :'a low-volume account';
+  const trend12=pm?(lsales>a.months[pm].sales*1.15?' with sales accelerating in the latest month'
+    :lsales<a.months[pm].sales*0.8?' with sales declining from the prior month':''):'';
+  s1=`${a.dealer} is ${volLabel} with $${(totalSales/1000).toFixed(0)}K in combined sales across ${consistency}${trend12}.`;
+
+  // ── Sentence 2: Quality performance ──
+  let s2='';
+  const aboveRatio=n>0?monthsAbove/n:0;
+  const qiVsBench=((wtdQI-latestB)/latestB*100);
+  const improving=pm&&lm&&lqi<pqi-1;
+  const worsening=pm&&lm&&lqi>pqi+1;
+  if(wtdQI<=5){
+    s2=`Quality performance is excellent — weighted QI of ${wtdQI.toFixed(2)} is well below the benchmark of ${latestB.toFixed(2)}, placing this account among the top performers.`;
+  } else if(aboveRatio===0){
+    s2=`Quality is consistently good — never above the ${latestB.toFixed(2)} benchmark across all active months, with a weighted QI of ${wtdQI.toFixed(2)}.`;
+  } else if(aboveRatio>=0.7){
+    s2=`Quality is a persistent concern — above benchmark in ${monthsAbove} of ${n} active months, ${Math.abs(qiVsBench).toFixed(0)}% ${qiVsBench>0?'worse':'better'} than the current benchmark of ${latestB.toFixed(2)}${improving?' though showing improvement recently':''}${worsening?' and worsening in the latest month':''}.`;
+  } else if(aboveRatio>=0.4){
+    s2=`Quality performance is inconsistent — above benchmark in ${monthsAbove} of ${n} months with a weighted QI of ${wtdQI.toFixed(2)} vs the ${latestB.toFixed(2)} benchmark${improving?', with the latest month showing improvement':worsening?', with the latest month worsening':''}. `;
+  } else {
+    s2=`Quality is generally in range — above benchmark in ${monthsAbove} of ${n} months, with a weighted QI of ${wtdQI.toFixed(2)} against the ${latestB.toFixed(2)} benchmark${improving?', and improving recently':''}.`;
+  }
+
+  // ── Sentence 3: Actionable recommendation ──
+  let s3='';
+  const isNewThisMonth=n===1;
+  const dormantRisk=lm&&lm!==MONTHS[MONTHS.length-1];
+  const chronic=monthsAbove>=4&&n>=4;
+  const excellentConsistent=wtdQI<=5&&n>=4;
+  const highVol=totalSales>=300000;
+
+  if(dormantRisk){
+    const lastActive=fmtM(lm);
+    s3=`This account has not transacted since ${lastActive} — follow up to understand if business has moved or if there is a re-engagement opportunity.`;
+  } else if(isNewThisMonth){
+    s3=`New account this period — monitor closely over the next 2–3 months to establish a quality baseline before drawing conclusions.`;
+  } else if(chronic&&highVol){
+    s3=`Given the volume and chronic quality pattern, this account warrants a direct conversation with ${a.salesman.split(' ')[0]} about root cause and whether a replacement rate improvement plan is in place.`;
+  } else if(chronic){
+    s3=`Persistent quality issues suggest a follow-up with ${a.salesman.split(' ')[0]} to review whether the replacement drivers are product-related, installation, or customer behavior.`;
+  } else if(excellentConsistent&&highVol){
+    s3=`A reliable high-volume account with excellent quality — a strong reference point for best practices and worth protecting with proactive relationship management.`;
+  } else if(worsening&&wtdQI>latestB){
+    s3=`The upward QI trend in the latest month is worth watching — if it continues next month, escalate to the watch list and review with ${a.salesman.split(' ')[0]}.`;
+  } else if(improving&&monthsAbove>=2){
+    s3=`The recent QI improvement is encouraging — continue to monitor over the next 2 months to confirm the trend before removing from the watch list.`;
+  } else {
+    s3=`Performance is within acceptable range — maintain regular check-ins with ${a.salesman.split(' ')[0]} to sustain current quality levels.`;
+  }
+
+  return `${s1} ${s2} ${s3}`;
+}
 
 loadDashboard();
 </script>
