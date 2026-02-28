@@ -469,6 +469,11 @@ body{background:var(--bg);color:var(--tx);font-family:'DM Sans',sans-serif;min-h
   .acard-months{grid-template-columns:repeat(3,1fr);}
 }
 
+  .sc-flip-btn{font-family:'DM Mono';font-size:.52rem;letter-spacing:.09em;text-transform:uppercase;
+    padding:3px 9px;border-radius:2px;cursor:pointer;background:rgba(232,255,71,.08);
+    border:1px solid rgba(232,255,71,.25);color:var(--ac);transition:all .15s;}
+  .sc-flip-btn:hover{background:rgba(232,255,71,.16);border-color:rgba(232,255,71,.5);}
+  .sc-face{width:100%;}
 </style>
 </head>
 <body>
@@ -1090,60 +1095,182 @@ function renderState(){
 
 // ── SCORECARDS ───────────────────────────
 function renderScorecards(){
+  // Build per-rep rollup across all months
   const repMap={};
   MONTHS.forEach(m=>{
     const b=DATA[m].benchmark;
     DATA[m].accounts.filter(a=>a.sales>0).forEach(a=>{
       const rep=a.salesman;
-      if(!repMap[rep])repMap[rep]={name:rep,months:{},totalSales:0,totalRepl:0};
+      if(!repMap[rep])repMap[rep]={name:rep,totalSales:0,totalRepl:0,months:{},acctMap:{}};
       if(!repMap[rep].months[m])repMap[rep].months[m]={sales:0,repl:0,n:0,above:0,bench:b};
-      repMap[rep].months[m].sales+=a.sales;repMap[rep].months[m].repl+=a.repl;
+      repMap[rep].months[m].sales+=a.sales;
+      repMap[rep].months[m].repl+=a.repl;
       repMap[rep].months[m].n++;
       if(a.qi>b)repMap[rep].months[m].above++;
-      repMap[rep].totalSales+=a.sales;repMap[rep].totalRepl+=a.repl;
+      repMap[rep].totalSales+=a.sales;
+      repMap[rep].totalRepl+=a.repl;
+      if(!repMap[rep].acctMap[a.alpha]){
+        repMap[rep].acctMap[a.alpha]={alpha:a.alpha,dealer:a.dealer,state:a.state,
+          sales:0,repl:0,monthCount:0,monthsAbove:0,qiByMonth:{}};
+      }
+      const ac=repMap[rep].acctMap[a.alpha];
+      ac.sales+=a.sales;ac.repl+=a.repl;ac.monthCount++;
+      ac.qiByMonth[m]=a.qi;
+      if(a.qi>b)ac.monthsAbove++;
     });
   });
+
+  // Compute company monthly QI for overlay
+  const companyMonthQI={};
+  MONTHS.forEach(m=>{
+    const accts=DATA[m].accounts.filter(a=>a.sales>0);
+    const ts=accts.reduce((s,a)=>s+a.sales,0);
+    const tr=accts.reduce((s,a)=>s+a.repl,0);
+    companyMonthQI[m]=ts>0?tr/ts*100000:0;
+  });
+
   const reps=Object.values(repMap).filter(r=>r.totalSales>10000).sort((a,b)=>b.totalSales-a.totalSales);
+
+  // Rank reps by wtdQI for peer comparison
+  const repRankList=[...reps].map(r=>({
+    name:r.name,
+    wtdQI:r.totalSales>0?r.totalRepl/r.totalSales*100000:0
+  })).sort((a,b)=>a.wtdQI-b.wtdQI);
+
   document.getElementById('scorecard-grid').innerHTML=reps.map((rep,ri)=>{
     const wtdQI=rep.totalSales>0?rep.totalRepl/rep.totalSales*100000:0;
-    const b=MONTHS.length>0?DATA[MONTHS[MONTHS.length-1]].benchmark:0;
+    const b=DATA[MONTHS[MONTHS.length-1]].benchmark;
     const monthKeys=MONTHS.filter(m=>rep.months[m]);
-    const totalAbove=monthKeys.reduce((s,m)=>s+rep.months[m].above,0);
-    const totalAccts=monthKeys.reduce((s,m)=>s+rep.months[m].n,0);
-    const qiTrend=monthKeys.map(m=>{const mv=rep.months[m];return mv.sales>0?mv.repl/mv.sales*100000:null;}).filter(v=>v!==null);
+    const uniqueAccts=Object.keys(rep.acctMap).length;
+    const avgPerMonth=monthKeys.length>0?(monthKeys.reduce((s,m)=>s+rep.months[m].n,0)/monthKeys.length).toFixed(1):0;
+
+    // Monthly QI trend
+    const qiTrend=monthKeys.map(m=>rep.months[m].sales>0?rep.months[m].repl/rep.months[m].sales*100000:0);
     const latestQI=qiTrend[qiTrend.length-1]||0;
     const priorQI=qiTrend[qiTrend.length-2]||0;
     const trendDir=qiTrend.length>1?(latestQI<priorQI?'▼':'▲'):' ';
     const trendColor=latestQI<priorQI?'var(--gd)':'var(--bad)';
-    return `<div class="sc-card" id="sc-${ri}">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:3px">
-        <div class="sc-name">${rep.name}</div>
-        <span class="qp ${qcls(wtdQI,b)}" style="font-size:.6rem">${wtdQI.toFixed(2)}</span>
-      </div>
-      <div class="sc-meta">${monthKeys.length}/${MONTHS.length} months · ${Math.round(totalAccts/monthKeys.length)} avg accts/month</div>
-      <div class="sc-stats">
-        <div class="sc-stat"><div class="sc-stat-l">7-MO SALES</div><div class="sc-stat-v" style="color:var(--ac2);font-size:1rem">${f$(rep.totalSales)}</div></div>
-        <div class="sc-stat"><div class="sc-stat-l">WTD QI</div><div class="sc-stat-v" style="color:${qcls(wtdQI,b)==='qe'?'var(--gd)':qcls(wtdQI,b)==='qg'?'var(--ac)':qcls(wtdQI,b)==='qw'?'var(--wn)':'var(--bad)'}">${wtdQI.toFixed(2)}</div></div>
-        <div class="sc-stat"><div class="sc-stat-l">TREND</div><div class="sc-stat-v" style="color:${trendColor}">${trendDir} ${latestQI.toFixed(1)}</div></div>
-      </div>
-      <div class="sc-trend"><canvas id="sc-chart-${ri}"></canvas></div>
-      <button style="font-family:'DM Mono';font-size:.52rem;color:var(--ac2);background:none;border:none;cursor:pointer;padding:6px 0 0;letter-spacing:.08em" onclick="toggleScDetail(${ri})">▾ Account Detail</button>
-      <div class="sc-detail" id="sc-detail-${ri}">
-        ${MONTHS.filter(m=>rep.months[m]).flatMap(m=>DATA[m].accounts.filter(a=>a.salesman===rep.name&&a.sales>0))
-          .sort((a,b2)=>b2.sales-a.sales).slice(0,8).map(a=>`
+
+    // Acct list rolled up
+    const acctList=Object.values(rep.acctMap).map(a=>({
+      ...a,
+      wtdQI:a.sales>0?a.repl/a.sales*100000:0,
+      riskScore:(a.sales/100000)*(a.sales>0?a.repl/a.sales*100000:0)
+    })).sort((a,b2)=>b2.sales-a.sales);
+
+    // ── NARRATIVE DATA ──
+    const mid=Math.ceil(qiTrend.length/2);
+    const earlyQIs=qiTrend.slice(0,mid).filter(q=>q>0);
+    const lateQIs=qiTrend.slice(mid).filter(q=>q>0);
+    const earlyAvg=earlyQIs.length?earlyQIs.reduce((s,q)=>s+q,0)/earlyQIs.length:0;
+    const lateAvg=lateQIs.length?lateQIs.reduce((s,q)=>s+q,0)/lateQIs.length:0;
+    const periodTrend=earlyAvg>0?(lateAvg-earlyAvg)/earlyAvg*100:0;
+
+    const rank=repRankList.findIndex(r=>r.name===rep.name)+1;
+    const total=repRankList.length;
+    const avgRepQI=repRankList.reduce((s,r)=>s+r.wtdQI,0)/total;
+    const vsAvg=wtdQI-avgRepQI;
+
+    const chronicAccts=acctList.filter(a=>a.monthsAbove>=4&&a.monthCount>=4&&a.sales>=50000);
+    const excellentAccts=acctList.filter(a=>a.wtdQI<=5&&a.sales>=20000);
+    const worstRisk=acctList.filter(a=>a.wtdQI>b).sort((a,b2)=>b2.riskScore-a.riskScore).slice(0,2);
+    const bestAccts=excellentAccts.sort((a,b2)=>b2.sales-a.sales).slice(0,2);
+
+    // Volatile = swings >5pts between months
+    const swings=qiTrend.slice(1).map((q,i)=>Math.abs(q-qiTrend[i]));
+    const volatile=swings.filter(s=>s>5).length>=3;
+
+    const narrative=buildRepNarrative(rep.name,wtdQI,rank,total,avgRepQI,periodTrend,
+      earlyAvg,lateAvg,chronicAccts,excellentAccts,worstRisk,bestAccts,volatile,monthKeys,qiTrend,b);
+
+    return `<div class="sc-card" id="sc-${ri}" style="position:relative">
+      <!-- FRONT -->
+      <div class="sc-face sc-front" id="scf-${ri}">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:3px">
+          <div class="sc-name">${rep.name}</div>
+          <span class="qp ${qcls(wtdQI,b)}" style="font-size:.6rem">${wtdQI.toFixed(2)}</span>
+        </div>
+        <div class="sc-meta">${uniqueAccts} unique accounts · ${avgPerMonth} avg active/month · Rank ${rank}/${total}</div>
+        <div class="sc-stats">
+          <div class="sc-stat"><div class="sc-stat-l">7-MO SALES</div><div class="sc-stat-v" style="color:var(--ac2);font-size:1rem">${f$(rep.totalSales)}</div></div>
+          <div class="sc-stat"><div class="sc-stat-l">WTD QI</div><div class="sc-stat-v" style="color:${qcls(wtdQI,b)==='qe'?'var(--gd)':qcls(wtdQI,b)==='qg'?'var(--ac)':qcls(wtdQI,b)==='qw'?'var(--wn)':'var(--bad)'}">${wtdQI.toFixed(2)}</div></div>
+          <div class="sc-stat"><div class="sc-stat-l">TREND</div><div class="sc-stat-v" style="color:${trendColor}">${trendDir} ${latestQI.toFixed(1)}</div></div>
+        </div>
+        <div class="sc-trend"><canvas id="sc-chart-${ri}"></canvas></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px">
+          <button class="sc-flip-btn" onclick="flipCard(${ri})">↺ Full Analysis</button>
+          <button style="font-family:'DM Mono';font-size:.52rem;color:var(--ac2);background:none;border:none;cursor:pointer;letter-spacing:.08em" onclick="toggleScDetail(${ri})">▾ Accounts (${acctList.length})</button>
+        </div>
+        <div class="sc-detail" id="sc-detail-${ri}">
+          ${acctList.slice(0,10).map(a=>`
           <div class="sc-acct-row" style="cursor:pointer" onclick="openAcctModal('${a.alpha}')">
             <span class="alpha" style="font-size:.58rem">${a.alpha}</span>
-            <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:.7rem">${a.dealer.slice(0,20)}</span>
+            <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:.7rem">${a.dealer.slice(0,22)}</span>
+            <span style="font-family:'DM Mono';font-size:.55rem;color:var(--tm)">${a.monthCount}mo</span>
             <span style="font-family:'DM Mono';font-size:.62rem;color:var(--ac2)">${f$(a.sales)}</span>
-            <span class="qp ${qcls(a.qi,DATA[a.month].benchmark)}" style="font-size:.58rem">${fqi(a.qi)}</span>
+            <span class="qp ${qcls(a.wtdQI,b)}" style="font-size:.58rem">${fqi(a.wtdQI)}</span>
           </div>`).join('')}
+          ${acctList.length>10?`<div style="font-family:'DM Mono';font-size:.54rem;color:var(--tm);padding:5px 0">+${acctList.length-10} more accounts</div>`:''}
+        </div>
+      </div>
+
+      <!-- BACK -->
+      <div class="sc-face sc-back" id="scb-${ri}" style="display:none">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+          <div>
+            <div class="sc-name">${rep.name}</div>
+            <div class="sc-meta">7-Month Performance Analysis</div>
+          </div>
+          <button class="sc-flip-btn" onclick="flipCard(${ri})">↺ Back</button>
+        </div>
+
+        <!-- Full QI trend chart -->
+        <div style="font-family:'DM Mono';font-size:.52rem;color:var(--tm);letter-spacing:.13em;text-transform:uppercase;margin-bottom:6px">QI TRAJECTORY vs BENCHMARK & COMPANY AVG</div>
+        <div style="position:relative;height:150px;margin-bottom:14px"><canvas id="sc-back-chart-${ri}"></canvas></div>
+
+        <!-- Narrative -->
+        <div style="background:var(--bg);border:1px solid var(--bd2);border-radius:3px;padding:11px 13px;margin-bottom:12px;position:relative">
+          <div style="font-family:'DM Mono';font-size:.52rem;letter-spacing:.13em;text-transform:uppercase;color:var(--ac);margin-bottom:7px">◈ REP ANALYSIS</div>
+          <div style="font-size:.78rem;line-height:1.65">${narrative}</div>
+        </div>
+
+        <!-- Pain points + bright spots -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:9px">
+          <div style="background:var(--bg);border:1px solid rgba(255,85,85,.2);border-radius:3px;padding:10px 12px">
+            <div style="font-family:'DM Mono';font-size:.51rem;color:var(--bad);letter-spacing:.12em;text-transform:uppercase;margin-bottom:8px">⚠ HIGHEST RISK ACCOUNTS</div>
+            ${worstRisk.length?worstRisk.map(a=>`
+              <div style="cursor:pointer;padding:5px 0;border-bottom:1px solid var(--bd)" onclick="openAcctModal('${a.alpha}')">
+                <div style="display:flex;justify-content:space-between;align-items:center">
+                  <span class="alpha" style="font-size:.56rem">${a.alpha}</span>
+                  <span style="font-family:'DM Mono';font-size:.56rem;color:var(--bad)">risk ${a.riskScore.toFixed(0)}</span>
+                </div>
+                <div style="font-size:.68rem;color:var(--tm);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${a.dealer.slice(0,22)}</div>
+                <div style="font-family:'DM Mono';font-size:.6rem;margin-top:2px"><span style="color:var(--ac2)">${f$(a.sales)}</span> · <span class="qp qb" style="font-size:.55rem">QI ${fqi(a.wtdQI)}</span></div>
+              </div>`).join('')
+            :`<div style="font-family:'DM Mono';font-size:.62rem;color:var(--gd)">No accounts above benchmark</div>`}
+          </div>
+          <div style="background:var(--bg);border:1px solid rgba(77,245,165,.2);border-radius:3px;padding:10px 12px">
+            <div style="font-family:'DM Mono';font-size:.51rem;color:var(--gd);letter-spacing:.12em;text-transform:uppercase;margin-bottom:8px">★ BRIGHT SPOTS</div>
+            ${bestAccts.length?bestAccts.map(a=>`
+              <div style="cursor:pointer;padding:5px 0;border-bottom:1px solid var(--bd)" onclick="openAcctModal('${a.alpha}')">
+                <div style="display:flex;justify-content:space-between;align-items:center">
+                  <span class="alpha" style="font-size:.56rem">${a.alpha}</span>
+                  <span class="qp qe" style="font-size:.55rem">QI ${fqi(a.wtdQI)}</span>
+                </div>
+                <div style="font-size:.68rem;color:var(--tm);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${a.dealer.slice(0,22)}</div>
+                <div style="font-family:'DM Mono';font-size:.6rem;margin-top:2px;color:var(--ac2)">${f$(a.sales)}</div>
+              </div>`).join('')
+            :`<div style="font-family:'DM Mono';font-size:.62rem;color:var(--tm)">No excellent-QI accounts ≥$20K</div>`}
+          </div>
+        </div>
       </div>
     </div>`;
   }).join('');
-  // Draw mini trend charts
+
+  // Draw front mini charts
   reps.forEach((rep,ri)=>{
     const mkeys=MONTHS.filter(m=>rep.months[m]);
-    const qis=mkeys.map(m=>{const mv=rep.months[m];return mv.sales>0?mv.repl/mv.sales*100000:0;});
+    const qis=mkeys.map(m=>rep.months[m].sales>0?rep.months[m].repl/rep.months[m].sales*100000:0);
     const benchmarks=mkeys.map(m=>DATA[m].benchmark);
     const ctx=document.getElementById(`sc-chart-${ri}`);if(!ctx)return;
     new Chart(ctx,{type:'line',
@@ -1151,9 +1278,113 @@ function renderScorecards(){
         {data:qis,borderColor:'#47c8ff',borderWidth:2,pointRadius:3,pointBackgroundColor:'#47c8ff',tension:.35,fill:false},
         {data:benchmarks,borderColor:'rgba(232,255,71,.4)',borderWidth:1,borderDash:[3,3],pointRadius:0,tension:.35,fill:false}
       ]},
-      options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>` ${c.parsed.y.toFixed(1)}`}}},
+      options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
         scales:{x:{display:false},y:{display:false,min:0}}}});
   });
+}
+
+function flipCard(ri){
+  const front=document.getElementById(`scf-${ri}`);
+  const back=document.getElementById(`scb-${ri}`);
+  const showing=front.style.display!=='none';
+  front.style.display=showing?'none':'block';
+  back.style.display=showing?'block':'none';
+  // Draw back chart on first flip
+  if(showing&&!back.dataset.drawn){
+    back.dataset.drawn='1';
+    drawRepBackChart(ri);
+  }
+}
+
+function drawRepBackChart(ri){
+  // Rebuild rep data for this card
+  const repName=document.getElementById(`scb-${ri}`)
+    .querySelector('.sc-name').textContent;
+  const repAccts={};
+  const mkeys=[];
+  MONTHS.forEach(m=>{
+    const accts=DATA[m].accounts.filter(a=>a.sales>0&&a.salesman===repName);
+    if(!accts.length)return;
+    mkeys.push(m);
+    const ts=accts.reduce((s,a)=>s+a.sales,0);
+    const tr=accts.reduce((s,a)=>s+a.repl,0);
+    repAccts[m]={qi:ts>0?tr/ts*100000:0};
+  });
+  const repQIs=mkeys.map(m=>repAccts[m].qi);
+  const benchmarks=mkeys.map(m=>DATA[m].benchmark);
+  // Company avg per month
+  const companyQIs=mkeys.map(m=>{
+    const all=DATA[m].accounts.filter(a=>a.sales>0);
+    const ts=all.reduce((s,a)=>s+a.sales,0);
+    const tr=all.reduce((s,a)=>s+a.repl,0);
+    return ts>0?tr/ts*100000:0;
+  });
+  const ctx=document.getElementById(`sc-back-chart-${ri}`);if(!ctx)return;
+  new Chart(ctx,{type:'line',
+    data:{labels:mkeys.map(fmtM),datasets:[
+      {label:'Rep QI',data:repQIs,borderColor:'#47c8ff',backgroundColor:'rgba(71,200,255,.08)',
+        borderWidth:2.5,pointRadius:5,pointBackgroundColor:'#47c8ff',tension:.35,fill:true},
+      {label:'Benchmark',data:benchmarks,borderColor:'rgba(232,255,71,.6)',
+        borderWidth:1.5,borderDash:[5,4],pointRadius:0,tension:.35,fill:false},
+      {label:'Company Avg',data:companyQIs,borderColor:'rgba(107,115,148,.5)',
+        borderWidth:1,borderDash:[2,4],pointRadius:0,tension:.35,fill:false}
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{position:'bottom',labels:{padding:10,boxWidth:9,font:{size:9}}}},
+      scales:{x:{grid:{display:false}},y:{grid:{color:'#1c2030'},min:0,ticks:{callback:v=>v.toFixed(1)}}}}});
+}
+
+function buildRepNarrative(name,wtdQI,rank,total,avgRepQI,periodTrend,earlyAvg,lateAvg,
+  chronicAccts,excellentAccts,worstRisk,bestAccts,volatile,monthKeys,qiTrend,b){
+
+  const firstName=name.split(' ')[0];
+  const vsAvg=wtdQI-avgRepQI;
+  const aboveAvg=vsAvg<0;
+
+  // ── Sentence 1: Overall standing and trajectory ──
+  const standingStr=rank===1?`the top-ranked rep in the portfolio`:
+    rank<=Math.ceil(total/3)?`ranked ${rank} of ${total} reps`:
+    rank>total-2?`ranked ${rank} of ${total} — bottom of the portfolio`:
+    `ranked ${rank} of ${total} reps`;
+  const vsAvgStr=Math.abs(vsAvg)<0.5?'near the company average':
+    aboveAvg?`${Math.abs(vsAvg).toFixed(1)} points below the company average — a positive separation`:
+    `${vsAvg.toFixed(1)} points above the company average`;
+  const trajStr=Math.abs(periodTrend)<10?'with a stable QI trend across the period':
+    periodTrend<-10?`with QI improving ${Math.abs(periodTrend).toFixed(0)}% from early to late in the period`:
+    `with QI deteriorating ${periodTrend.toFixed(0)}% from early to late in the period`;
+  const s1=`${firstName} carries a weighted QI of ${wtdQI.toFixed(2)}, ${standingStr} and ${vsAvgStr}, ${trajStr}.`;
+
+  // ── Sentence 2: Account quality health ──
+  let s2='';
+  if(chronicAccts.length===0&&excellentAccts.length>0){
+    s2=`The roster is in solid shape — no chronic offenders and ${excellentAccts.length} account${excellentAccts.length>1?'s':''} at excellent QI (≤5)${bestAccts.length?`, led by ${bestAccts[0].dealer.slice(0,18)} at QI ${bestAccts[0].wtdQI.toFixed(1)}`:''}. This is a well-managed book.`;
+  } else if(chronicAccts.length>=3){
+    const pct=Math.round(chronicAccts.length/Object.keys(worstRisk).length*100)||'';
+    s2=`Quality health is a concern — ${chronicAccts.length} accounts are chronic offenders (above benchmark 4+ months), representing a meaningful portion of the book${worstRisk.length?`. The highest-risk account is ${worstRisk[0].dealer.slice(0,18)} with a risk score of ${worstRisk[0].riskScore.toFixed(0)}`:''}. These need direct attention.`;
+  } else if(chronicAccts.length>0){
+    s2=`Most accounts are performing acceptably, but ${chronicAccts.length} chronic offender${chronicAccts.length>1?'s':''} warrant focused follow-up${worstRisk.length?` — ${worstRisk[0].dealer.slice(0,18)} carries the highest risk score at ${worstRisk[0].riskScore.toFixed(0)} (${f$(worstRisk[0].sales)} at QI ${worstRisk[0].wtdQI.toFixed(1)})`:''}. `;
+    if(excellentAccts.length>0) s2+=`${excellentAccts.length} bright spot${excellentAccts.length>1?'s':''} offset some of the concern.`;
+  } else {
+    s2=`Account quality is generally in range with no chronic offenders identified. ${volatile?'Monthly QI shows volatility which is worth monitoring even without a persistent above-benchmark trend.':'Performance has been consistent throughout the period.'}`;
+  }
+
+  // ── Sentence 3: Specific recommendation ──
+  let s3='';
+  if(rank===1||rank===2){
+    s3=`${firstName} is a model for the team — if there are identifiable practices or account management approaches driving these results, they are worth sharing across the sales organization.`;
+  } else if(rank>total-2&&chronicAccts.length>0){
+    s3=`Given the ranking and the chronic account burden, a structured performance review with ${firstName} focused specifically on the highest-risk accounts and a QI improvement plan would be appropriate.`;
+  } else if(periodTrend>30&&wtdQI>b){
+    s3=`The deteriorating trend is the priority concern — if the QI trajectory continues into the next month, a formal account-by-account quality review with ${firstName} is warranted before this becomes a systemic issue.`;
+  } else if(periodTrend<-20&&wtdQI<=b){
+    s3=`The improving trajectory is a strong signal — reinforce what ${firstName} is doing differently and ensure it is sustained, particularly with any accounts that were recently brought back under benchmark.`;
+  } else if(volatile){
+    s3=`The month-to-month volatility in QI suggests inconsistency at the account level that may not show up in the weighted average — a closer look at which specific accounts are driving the swings each month would be worthwhile.`;
+  } else {
+    s3=`${firstName}'s book is performing at a mid-range level — the focus should be on converting watch-list accounts to consistent below-benchmark performance, which would meaningfully improve the overall weighted QI.`;
+  }
+
+  return `${s1} ${s2} ${s3}`;
 }
 function toggleScDetail(i){document.getElementById(`sc-detail-${i}`)?.classList.toggle('open');}
 
@@ -1506,61 +1737,82 @@ function buildAcctSummary(a, transKeys, totalSales, wtdQI, monthsAbove, latestB)
   const lqi=lm?a.months[lm].qi:0, pqi=pm?a.months[pm].qi:0;
   const lsales=lm?a.months[lm].sales:0;
 
+  // ── SMARTER TREND: early avg vs late avg (not just last step) ──
+  const mid=Math.ceil(n/2);
+  const earlyKeys=transKeys.slice(0,mid);
+  const lateKeys=transKeys.slice(mid);
+  const earlyQIs=earlyKeys.map(m=>a.months[m].qi).filter(q=>q>0);
+  const lateQIs=lateKeys.map(m=>a.months[m].qi).filter(q=>q>0);
+  const earlyAvg=earlyQIs.length?earlyQIs.reduce((s,q)=>s+q,0)/earlyQIs.length:0;
+  const lateAvg=lateQIs.length?lateQIs.reduce((s,q)=>s+q,0)/lateQIs.length:0;
+  const periodTrendPct=earlyAvg>0?(lateAvg-earlyAvg)/earlyAvg*100:0;
+  // Last 2 months average vs benchmark
+  const last2Keys=transKeys.slice(-2);
+  const last2QIs=last2Keys.map(m=>a.months[m].qi);
+  const last2Avg=last2QIs.length?last2QIs.reduce((s,q)=>s+q,0)/last2QIs.length:0;
+  const last2xBench=latestB>0?last2Avg/latestB:0;
+  // Trend classifications using period trend, not just last step
+  const deteriorating=periodTrendPct>30&&lateAvg>latestB;
+  const stronglyImproving=periodTrendPct<-25&&earlyAvg>latestB;
+  const recentSpike=last2Avg>latestB*2&&earlyAvg<=latestB*1.2;
+  const recentlyClean=last2Avg<=latestB&&earlyAvg>latestB*1.3;
+
   // ── Sentence 1: Sales volume and consistency ──
-  let s1='';
   const consistency=n===totalM?`all ${totalM} months`
-    :n>=totalM*0.7?`${n} of ${totalM} months (strong consistency)`
+    :n>=totalM*0.7?`${n} of ${totalM} months`
     :n>=totalM*0.4?`${n} of ${totalM} months`
     :`only ${n} of ${totalM} months`;
   const volLabel=totalSales>=500000?'a high-volume account'
     :totalSales>=150000?'a solid mid-tier account'
     :totalSales>=50000?'a smaller account'
     :'a low-volume account';
-  const trend12=pm?(lsales>a.months[pm].sales*1.15?' with sales accelerating in the latest month'
-    :lsales<a.months[pm].sales*0.8?' with sales declining from the prior month':''):'';
-  s1=`${a.dealer} is ${volLabel} with $${(totalSales/1000).toFixed(0)}K in combined sales across ${consistency}${trend12}.`;
+  const salesTrend=pm&&lsales>0?(lsales>a.months[pm].sales*1.2?' with sales accelerating in recent months'
+    :lsales<a.months[pm].sales*0.75?' with sales declining from the prior month':''):'';
+  const s1=`${a.dealer} is ${volLabel} with ${f$(totalSales)} in combined sales across ${consistency}${salesTrend}.`;
 
-  // ── Sentence 2: Quality performance ──
+  // ── Sentence 2: Quality using period trend, not just last step ──
   let s2='';
-  const aboveRatio=n>0?monthsAbove/n:0;
-  const qiVsBench=((wtdQI-latestB)/latestB*100);
-  const improving=pm&&lm&&lqi<pqi-1;
-  const worsening=pm&&lm&&lqi>pqi+1;
-  if(wtdQI<=5){
-    s2=`Quality performance is excellent — weighted QI of ${wtdQI.toFixed(2)} is well below the benchmark of ${latestB.toFixed(2)}, placing this account among the top performers.`;
-  } else if(aboveRatio===0){
-    s2=`Quality is consistently good — never above the ${latestB.toFixed(2)} benchmark across all active months, with a weighted QI of ${wtdQI.toFixed(2)}.`;
-  } else if(aboveRatio>=0.7){
-    s2=`Quality is a persistent concern — above benchmark in ${monthsAbove} of ${n} active months, ${Math.abs(qiVsBench).toFixed(0)}% ${qiVsBench>0?'worse':'better'} than the current benchmark of ${latestB.toFixed(2)}${improving?' though showing improvement recently':''}${worsening?' and worsening in the latest month':''}.`;
-  } else if(aboveRatio>=0.4){
-    s2=`Quality performance is inconsistent — above benchmark in ${monthsAbove} of ${n} months with a weighted QI of ${wtdQI.toFixed(2)} vs the ${latestB.toFixed(2)} benchmark${improving?', with the latest month showing improvement':worsening?', with the latest month worsening':''}. `;
+  if(wtdQI<=5&&!recentSpike){
+    s2=`Quality performance is excellent — weighted QI of ${wtdQI.toFixed(2)} well below the ${latestB.toFixed(2)} benchmark, consistently among the top performers.`;
+  } else if(recentSpike){
+    s2=`Quality has deteriorated sharply in recent months — the last ${last2Keys.length} months averaged QI ${last2Avg.toFixed(1)}, ${last2xBench.toFixed(1)}x the benchmark of ${latestB.toFixed(2)}, compared to clean performance earlier in the period.`;
+  } else if(deteriorating){
+    s2=`Quality is trending in the wrong direction — early period averaged QI ${earlyAvg.toFixed(1)} vs ${lateAvg.toFixed(1)} in recent months (${Math.abs(periodTrendPct).toFixed(0)}% worse), with the last 2 months running ${last2xBench.toFixed(1)}x the ${latestB.toFixed(2)} benchmark.`;
+  } else if(stronglyImproving){
+    s2=`Quality is genuinely improving — early period averaged QI ${earlyAvg.toFixed(1)}, dropping to ${lateAvg.toFixed(1)} in recent months, a meaningful ${Math.abs(periodTrendPct).toFixed(0)}% improvement though still ${lateAvg>latestB?'above':'near'} the ${latestB.toFixed(2)} benchmark.`;
+  } else if(recentlyClean&&monthsAbove>=2){
+    s2=`After being above benchmark earlier in the period, recent months show improvement — last 2 months averaged QI ${last2Avg.toFixed(1)} vs the ${latestB.toFixed(2)} benchmark. Trend is positive but needs another month to confirm.`;
+  } else if(monthsAbove===0){
+    s2=`Quality is consistently good — never above the ${latestB.toFixed(2)} benchmark across all active months, weighted QI of ${wtdQI.toFixed(2)}.`;
+  } else if(monthsAbove/n>=0.6){
+    s2=`Quality is a persistent concern — above benchmark in ${monthsAbove} of ${n} active months with weighted QI of ${wtdQI.toFixed(2)} vs the ${latestB.toFixed(2)} benchmark.`;
   } else {
-    s2=`Quality is generally in range — above benchmark in ${monthsAbove} of ${n} months, with a weighted QI of ${wtdQI.toFixed(2)} against the ${latestB.toFixed(2)} benchmark${improving?', and improving recently':''}.`;
+    s2=`Quality performance is mixed — above benchmark in ${monthsAbove} of ${n} months, weighted QI ${wtdQI.toFixed(2)} vs the ${latestB.toFixed(2)} benchmark.`;
   }
 
-  // ── Sentence 3: Actionable recommendation ──
+  // ── Sentence 3: Action recommendation ──
   let s3='';
-  const isNewThisMonth=n===1;
   const dormantRisk=lm&&lm!==MONTHS[MONTHS.length-1];
+  const isNew=n===1;
   const chronic=monthsAbove>=4&&n>=4;
-  const excellentConsistent=wtdQI<=5&&n>=4;
   const highVol=totalSales>=300000;
 
   if(dormantRisk){
-    const lastActive=fmtM(lm);
-    s3=`This account has not transacted since ${lastActive} — follow up to understand if business has moved or if there is a re-engagement opportunity.`;
-  } else if(isNewThisMonth){
-    s3=`New account this period — monitor closely over the next 2–3 months to establish a quality baseline before drawing conclusions.`;
+    s3=`This account has not transacted since ${fmtM(lm)} — follow up with ${a.salesman.split(' ')[0]} to understand if the relationship has gone dormant or if there is a re-engagement opportunity.`;
+  } else if(isNew){
+    s3=`New account this period — monitor over the next 2–3 months to establish a quality baseline before drawing conclusions.`;
+  } else if(recentSpike&&highVol){
+    s3=`Given the volume and the sharp recent quality decline, this warrants an immediate conversation with ${a.salesman.split(' ')[0]} — the spike in the last two months is not a recovery story, it is an emerging problem.`;
+  } else if(recentSpike){
+    s3=`The recent quality spike is worth flagging to ${a.salesman.split(' ')[0]} — even though the step-down from the prior month looks like improvement, the last two months represent this account's worst performance in the tracked period.`;
+  } else if(deteriorating&&highVol){
+    s3=`The consistent quality deterioration on a high-volume account is a priority conversation — ${a.salesman.split(' ')[0]} should have a direct discussion with this dealer about root cause and accountability.`;
   } else if(chronic&&highVol){
-    s3=`Given the volume and chronic quality pattern, this account warrants a direct conversation with ${a.salesman.split(' ')[0]} about root cause and whether a replacement rate improvement plan is in place.`;
-  } else if(chronic){
-    s3=`Persistent quality issues suggest a follow-up with ${a.salesman.split(' ')[0]} to review whether the replacement drivers are product-related, installation, or customer behavior.`;
-  } else if(excellentConsistent&&highVol){
-    s3=`A reliable high-volume account with excellent quality — a strong reference point for best practices and worth protecting with proactive relationship management.`;
-  } else if(worsening&&wtdQI>latestB){
-    s3=`The upward QI trend in the latest month is worth watching — if it continues next month, escalate to the watch list and review with ${a.salesman.split(' ')[0]}.`;
-  } else if(improving&&monthsAbove>=2){
-    s3=`The recent QI improvement is encouraging — continue to monitor over the next 2 months to confirm the trend before removing from the watch list.`;
+    s3=`Persistent quality issues on a high-volume account — a structured improvement plan with specific QI targets and a timeline is warranted with ${a.salesman.split(' ')[0]}.`;
+  } else if(stronglyImproving){
+    s3=`The improving trend is real and worth acknowledging — reinforce the positive direction with the dealer while continuing to monitor monthly to confirm the trajectory holds.`;
+  } else if(wtdQI<=5&&highVol){
+    s3=`A reliable high-volume account with excellent quality — a reference point for best practices worth protecting with proactive relationship management.`;
   } else {
     s3=`Performance is within acceptable range — maintain regular check-ins with ${a.salesman.split(' ')[0]} to sustain current quality levels.`;
   }
