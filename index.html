@@ -221,6 +221,254 @@ body{background:var(--bg);color:var(--tx);font-family:'DM Sans',sans-serif;min-h
 .foot{text-align:center;font-family:'DM Mono';font-size:.52rem;color:var(--td);letter-spacing:.07em;padding:14px 0 8px;border-top:1px solid var(--bd);margin-top:8px;}
 
 @media print{.hdr,.nav,.export-btn,.ntab{display:none!important;}.page{display:block!important;}.wrap{padding:0;}}
+
+/* ── MOBILE RESPONSIVE ─────────────────── */
+@media (max-width:768px){
+  .hdr{padding:10px 14px;flex-wrap:wrap;gap:8px;}
+  .hdr h1{font-size:1.3rem;}
+  .hdr-sub{font-size:.48rem;}
+  .badges{gap:4px;}
+  .badge{font-size:.48rem;padding:2px 5px;}
+  .export-btn{font-size:.48rem;padding:3px 7px;}
+
+  /* Bottom nav on mobile */
+  .nav{position:fixed;bottom:0;left:0;right:0;top:auto;z-index:200;background:var(--sf);border-top:1px solid var(--bd);border-bottom:none;padding:0;justify-content:space-around;overflow-x:auto;}
+  .ntab{font-size:.5rem;padding:10px 6px 8px;letter-spacing:.06em;display:flex;flex-direction:column;align-items:center;gap:2px;min-width:0;flex:1;}
+  .ntab::before{font-size:1rem;line-height:1;}
+  .ntab:nth-child(1)::before{content:'📊';}
+  .ntab:nth-child(2)::before{content:'👥';}
+  .ntab:nth-child(3)::before{content:'⚠️';}
+  .ntab:nth-child(4)::before{content:'🏆';}
+  .ntab:nth-child(5)::before{content:'📈';}
+  .ntab:nth-child(6)::before{content:'🔍';}
+
+  /* Add bottom padding so content clears the nav */
+  .wrap{padding:14px 12px 70px;max-width:100%;}
+
+  /* KPI row: 2 col on mobile */
+  .krow{grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;}
+  .krow .kc:last-child{grid-column:span 2;}
+  .kc{padding:11px 12px;}
+  .kv{font-size:1.5rem;}
+  .kl{font-size:.5rem;}
+  .ks{font-size:.5rem;}
+  .kbadge{font-size:.48rem;}
+
+  /* Narrative: single col */
+  .narr{padding:12px 13px;margin-bottom:14px;}
+  .narr-grid{grid-template-columns:1fr;gap:8px;}
+  .narr-h{margin-bottom:9px;}
+
+  /* Charts: single col */
+  .crow{grid-template-columns:1fr;gap:10px;margin-bottom:14px;}
+  .crow-2{grid-template-columns:1fr;gap:10px;margin-bottom:14px;}
+  .cw{height:160px;}
+  .cw-lg{height:170px;}
+
+  /* Chronic grid: 2 col */
+  .chronic-grid{grid-template-columns:1fr 1fr;gap:7px;}
+  .chronic-card{padding:9px 10px;}
+  .cc-name{font-size:.65rem;}
+
+  /* Alert row: single col */
+  .alert-row{grid-template-columns:1fr;gap:10px;}
+
+  /* Two col tables: single col */
+  .tcol{grid-template-columns:1fr;gap:10px;margin-bottom:14px;}
+  .trend-cols{grid-template-columns:1fr;gap:10px;margin-bottom:14px;}
+
+  /* Scorecard grid: 1 col */
+  .scorecard-grid{grid-template-columns:1fr;gap:10px;}
+  .sc-stats{grid-template-columns:repeat(3,1fr);}
+
+  /* Tables: scrollable */
+  .tscroll{max-height:320px;}
+  .dt tbody td{padding:5px 7px;font-size:.7rem;}
+  .dt thead th{padding:6px 7px;font-size:.48rem;}
+  .dt tbody td.nr{font-size:.63rem;}
+  .dn{max-width:110px;}
+
+  /* Filter rows: wrap */
+  .rfil{gap:6px;}
+  .rfil-lbl{font-size:.5rem;}
+  .rsel{font-size:.56rem;padding:3px 5px;}
+
+  /* Sales bars */
+  .sbars{padding:8px 10px;}
+  .sbar-name{min-width:100px;font-size:.65rem;}
+  .sbar-meta{min-width:100px;font-size:.54rem;}
+
+  /* Search */
+  .search-in{font-size:.78rem;padding:7px 9px;}
+  .acard{padding:11px 12px;}
+  .acard-months{grid-template-columns:repeat(auto-fill,minmax(80px,1fr));gap:6px;}
+  .am{padding:6px 8px;}
+
+  /* Modal: full screen on mobile */
+  .modal{width:100vw;height:100dvh;max-height:100dvh;border-radius:0;padding:16px 14px;overflow-y:auto;}
+  .modal-bg{align-items:flex-end;}
+  .modal-krow{grid-template-columns:1fr 1fr;gap:7px;}
+  .modal-months{grid-template-columns:repeat(auto-fill,minmax(80px,1fr));}
+  .modal-cw{height:160px;}
+
+  /* Section headers */
+  .sh-t{font-size:.85rem;}
+  .sh-tag{font-size:.48rem;}
+
+  /* Toggle buttons */
+  .tb{font-size:.48rem;padding:2px 6px;}
+
+  /* Bench bar */
+  .bench-bar{font-size:.54rem;padding:6px 9px;}
+  .noise-banner{font-size:.52rem;padding:6px 9px;}
+}
+
+@media (max-width:400px){
+  .krow{grid-template-columns:1fr 1fr;}
+  .chronic-grid{grid-template-columns:1fr;}
+  .hdr h1{font-size:1.1rem;}
+}
+
+/* ═══════════════════════════════════════
+   MOBILE RESPONSIVE STYLES
+   ═══════════════════════════════════════ */
+
+/* TABLET — 1024px and below */
+@media (max-width:1024px){
+  .krow{grid-template-columns:repeat(3,1fr);}
+  .crow{grid-template-columns:1fr 1fr;}
+  .crow .cc:last-child{grid-column:span 2;}
+  .crow-2{grid-template-columns:1fr;}
+  .tcol{grid-template-columns:1fr;}
+  .trend-cols{grid-template-columns:1fr;}
+  .chronic-grid{grid-template-columns:repeat(3,1fr);}
+  .narr-grid{grid-template-columns:1fr 1fr;}
+  .narr-grid .ni:last-child{grid-column:span 2;}
+  .scorecard-grid{grid-template-columns:1fr 1fr;}
+  .alert-row{grid-template-columns:1fr;}
+  .modal-krow{grid-template-columns:repeat(2,1fr);}
+}
+
+/* MOBILE — 768px and below */
+@media (max-width:768px){
+  .hdr{padding:10px 16px;flex-wrap:wrap;gap:8px;}
+  .hdr h1{font-size:1.4rem;}
+  .hdr-sub{font-size:.5rem;}
+  .badges{gap:4px;}
+  .badge{font-size:.5rem;padding:2px 5px;}
+  .export-btn{font-size:.5rem;padding:3px 7px;}
+
+  /* Bottom tab nav on mobile */
+  .nav{
+    position:fixed;bottom:0;left:0;right:0;z-index:200;
+    background:var(--sf);border-top:1px solid var(--bd);border-bottom:none;
+    padding:0;display:flex;justify-content:space-around;
+    box-shadow:0 -4px 20px rgba(0,0,0,.4);
+  }
+  .ntab{
+    flex:1;padding:8px 2px 10px;font-size:.48rem;letter-spacing:.06em;
+    display:flex;flex-direction:column;align-items:center;gap:3px;
+    border-bottom:none;border-top:2px solid transparent;
+  }
+  .ntab.act{border-top-color:var(--ac);border-bottom:none;color:var(--ac);}
+  .ntab::before{font-size:1rem;line-height:1;}
+  .ntab:nth-child(1)::before{content:'◈';}
+  .ntab:nth-child(2)::before{content:'⊞';}
+  .ntab:nth-child(3)::before{content:'⚠';}
+  .ntab:nth-child(4)::before{content:'★';}
+  .ntab:nth-child(5)::before{content:'↗';}
+  .ntab:nth-child(6)::before{content:'⌕';}
+
+  /* Push content up above fixed bottom nav */
+  .wrap{padding:14px 14px 72px;}
+
+  .krow{grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;}
+  .kc{padding:11px 12px;}
+  .kv{font-size:1.5rem;}
+  .kl{font-size:.5rem;}
+  .ks{font-size:.5rem;}
+  .kbadge{font-size:.48rem;}
+
+  .narr-grid{grid-template-columns:1fr;gap:8px;}
+  .narr-grid .ni:last-child{grid-column:auto;}
+  .narr{padding:12px 14px;margin-bottom:14px;}
+  .nit{font-size:.72rem;}
+
+  .chronic-grid{grid-template-columns:1fr 1fr;gap:7px;}
+  .chronic-card{padding:9px 10px;}
+  .cc-name{font-size:.65rem;}
+  .cc-stat-v{font-size:.62rem;}
+
+  .alert-row{grid-template-columns:1fr;gap:10px;margin-bottom:14px;}
+
+  .crow{grid-template-columns:1fr;gap:10px;margin-bottom:14px;}
+  .crow .cc:last-child{grid-column:auto;}
+  .crow-2{grid-template-columns:1fr;gap:10px;}
+  .cw{height:160px;}
+  .cw-lg{height:180px;}
+
+  .tcol{grid-template-columns:1fr;gap:10px;margin-bottom:14px;}
+  .trend-cols{grid-template-columns:1fr;gap:10px;margin-bottom:14px;}
+
+  .scorecard-grid{grid-template-columns:1fr;gap:10px;}
+  .sc-stats{grid-template-columns:repeat(3,1fr);}
+
+  .sh-t{font-size:.88rem;}
+  .sh{margin-bottom:10px;}
+
+  .rfil{gap:6px;}
+  .rfil-lbl{font-size:.52rem;}
+  .rsel{font-size:.58rem;padding:3px 6px;}
+
+  .sbars{padding:8px 10px;}
+  .sbar-name{min-width:100px;font-size:.67rem;}
+  .sbar-meta{min-width:90px;font-size:.55rem;}
+
+  /* Tables: horizontal scroll on mobile */
+  .tscroll{max-height:380px;}
+  .dt thead th{font-size:.48rem;padding:6px 7px;}
+  .dt tbody td{font-size:.7rem;padding:5px 7px;}
+  .dt tbody td.nr{font-size:.65rem;}
+  .dn{max-width:110px;}
+
+  .bench-bar{font-size:.56rem;padding:6px 10px;}
+  .noise-banner{font-size:.54rem;}
+
+  /* Modal */
+  .modal{padding:16px;width:96vw;max-height:92vh;}
+  .modal-title{font-size:1.1rem;}
+  .modal-krow{grid-template-columns:1fr 1fr;gap:7px;}
+  .modal-kc{padding:8px 10px;}
+  .modal-kv{font-size:1.1rem;}
+  .modal-months{grid-template-columns:repeat(auto-fill,minmax(78px,1fr));gap:6px;}
+  .modal-cw{height:160px;}
+
+  /* Search */
+  .search-in{font-size:.78rem;padding:8px 10px;}
+  .acard{padding:12px 13px;}
+  .acard-months{grid-template-columns:repeat(auto-fill,minmax(78px,1fr));gap:6px;}
+
+  /* Hide less useful cols on mobile tables */
+  .dt .hide-m{display:none;}
+  
+  /* Flip btn */
+  .flip-btn{font-size:.5rem;padding:2px 6px;}
+
+  /* Scorecard detail */
+  .sc-acct-row{font-size:.68rem;}
+}
+
+/* SMALL MOBILE — 480px and below */
+@media (max-width:480px){
+  .krow{grid-template-columns:1fr 1fr;gap:7px;}
+  .kv{font-size:1.35rem;}
+  .chronic-grid{grid-template-columns:1fr;}
+  .hdr h1{font-size:1.2rem;}
+  .modal-krow{grid-template-columns:1fr 1fr;}
+  .sc-stats{grid-template-columns:1fr 1fr;}
+  .acard-months{grid-template-columns:repeat(3,1fr);}
+}
+
 </style>
 </head>
 <body>
@@ -379,7 +627,7 @@ body{background:var(--bg);color:var(--tx);font-family:'DM Sans',sans-serif;min-h
         <span class="rfil-lbl" style="margin-left:8px;color:var(--tm)" id="cust-count"></span>
       </div>
       <div class="tw"><div class="tscroll"><table class="dt">
-        <thead><tr><th>#</th><th>Alpha</th><th>Dealer</th><th>Status</th><th>Rep</th><th>St</th><th class="nr">Sales</th><th class="nr">Repl</th><th class="nr">QI</th><th class="nr">vs Bench</th><th>Tier</th></tr></thead>
+        <thead><tr><th>#</th><th>Alpha</th><th>Dealer</th><th class="hide-m">Status</th><th class="hide-m">Rep</th><th class="hide-m">St</th><th class="nr">Sales</th><th class="nr hide-m">Repl</th><th class="nr">QI</th><th class="nr hide-m">vs Bench</th><th>Tier</th></tr></thead>
         <tbody id="cust-body"></tbody>
       </table></div></div>
     </div>
@@ -390,11 +638,17 @@ body{background:var(--bg);color:var(--tx);font-family:'DM Sans',sans-serif;min-h
       <div class="rfil">
         <span class="rfil-lbl">Rep:</span>
         <select class="rsel" id="rep-fil-wl" onchange="renderWL()"><option value="">All</option></select>
+        <span class="rfil-lbl" style="margin-left:8px">Sort:</span>
+        <select class="rsel" id="sort-wl" onchange="renderWL()">
+          <option value="qi-worst">QI Worst First</option>
+          <option value="sales">Sales ↓</option>
+          <option value="over-bench">% Over Benchmark</option>
+        </select>
         <span class="rfil-lbl" style="margin-left:8px;color:var(--tm)" id="wl-count"></span>
       </div>
       <div class="bench-bar"><div class="bench-dot"></div><span id="wl-bench-txt">—</span></div>
       <div class="tw"><div class="tscroll"><table class="dt">
-        <thead><tr><th>Alpha</th><th>Dealer</th><th>Status</th><th>Rep</th><th>St</th><th class="nr">Sales</th><th class="nr">QI</th><th class="nr">Over Bench</th><th>Tier</th></tr></thead>
+        <thead><tr><th>Alpha</th><th>Dealer</th><th class="hide-m">Status</th><th class="hide-m">Rep</th><th class="hide-m">St</th><th class="nr">Sales</th><th class="nr">QI</th><th class="nr hide-m">Over Bench</th><th>Tier</th></tr></thead>
         <tbody id="wl-body"></tbody>
       </table></div></div>
     </div>
@@ -447,6 +701,8 @@ body{background:var(--bg);color:var(--tx);font-family:'DM Sans',sans-serif;min-h
 const SHEET_ID='1yZlaQ8haMOtn9xLa78Zn5odH4R5hbME67migsid17lA';
 const API_KEY='AIzaSyBI8ufs8JUw0BG4zc2K2tU63We-F-3Fphw';
 const BASE_URL='https://sheets.googleapis.com/v4/spreadsheets';
+// ↓ Paste your Anthropic API key here (from console.anthropic.com)
+const ANTHROPIC_KEY='PASTE_YOUR_ANTHROPIC_API_KEY_HERE';
 const COMB_MIN_MONTHS=4, COMB_MIN_SALES=50000, CHRONIC_MONTHS=4;
 const TREND_MIN_SALES=25000, TREND_MIN_IMP=-2, TREND_MIN_WOR=3;
 
@@ -840,9 +1096,9 @@ function renderCust(){
       <td><span class="rank${i<3?' top':''}">${i+1}</span></td>
       <td><span class="alpha">${a.alpha}</span></td>
       <td><div class="dn" title="${a.dealer}">${a.dealer}</div></td>
-      <td>${spill(a.status)}</td><td style="font-size:.68rem;color:var(--tm)">${a.salesman}</td>
-      <td style="font-family:'DM Mono';font-size:.7rem">${a.state}</td>
-      <td class="nr" style="color:var(--ac2)">${f$(a.sales)}</td><td class="nr">${a.repl}</td>
+      <td class="hide-m">${spill(a.status)}</td><td class="hide-m" style="font-size:.68rem;color:var(--tm)">${a.salesman}</td>
+      <td class="hide-m" style="font-family:'DM Mono';font-size:.7rem">${a.state}</td>
+      <td class="nr" style="color:var(--ac2)">${f$(a.sales)}</td><td class="nr hide-m">${a.repl}</td>
       <td class="nr"><span class="qp ${qcls(a.qi,b)}">${fqi(a.qi)}</span></td>
       <td class="nr"><span class="${vsB<0?'tv-up':vsB>0?'tv-dn':'tv-fl'}">${vsB<0?'▼ '+Math.abs(vsB).toFixed(1)+'%':vsB>0?'▲ '+vsB.toFixed(1)+'%':'—'}</span></td>
       <td>${tierBadge(t)}</td></tr>`;
@@ -855,17 +1111,20 @@ function renderWL(){
   const b=bench();
   let accts=curAccts().filter(a=>a.sales>0&&a.qi>b);
   if(rep)accts=accts.filter(a=>a.salesman===rep);
-  accts.sort((a,b2)=>b2.qi-a.qi);
+  const wlSort=document.getElementById('sort-wl')?.value||'qi-worst';
+  if(wlSort==='sales') accts.sort((a,b2)=>b2.sales-a.sales);
+  else if(wlSort==='over-bench') accts.sort((a,b2)=>((b2.qi-b)/b)-((a.qi-b)/b));
+  else accts.sort((a,b2)=>b2.qi-a.qi);
   document.getElementById('wl-count').textContent=`${accts.length} accounts above benchmark`;
   document.getElementById('wl-body').innerHTML=accts.map(a=>{
     const over=(a.qi-b)/b*100,t=acctTier(a);
     return `<tr class="clickable" onclick="openAcctModal('${a.alpha}')">
       <td><span class="alpha">${a.alpha}</span></td><td><div class="dn" title="${a.dealer}">${a.dealer}</div></td>
-      <td>${spill(a.status)}</td><td style="font-size:.68rem;color:var(--tm)">${a.salesman}</td>
-      <td style="font-family:'DM Mono';font-size:.7rem">${a.state}</td>
+      <td class="hide-m">${spill(a.status)}</td><td class="hide-m" style="font-size:.68rem;color:var(--tm)">${a.salesman}</td>
+      <td class="hide-m" style="font-family:'DM Mono';font-size:.7rem">${a.state}</td>
       <td class="nr" style="color:var(--ac2)">${f$(a.sales)}</td>
       <td class="nr"><span class="qp qb">${fqi(a.qi)}</span></td>
-      <td class="nr"><span class="tv-dn">+${over.toFixed(1)}%</span></td>
+      <td class="nr hide-m"><span class="tv-dn">+${over.toFixed(1)}%</span></td>
       <td>${tierBadge(t)}</td></tr>`;
   }).join('');
 }
@@ -978,7 +1237,12 @@ ${latestM&&prevM?`Recent trend: QI moved from ${a.months[prevM].qi.toFixed(2)} (
 Write exactly 3 sentences. Sentence 1: sales volume and purchase consistency. Sentence 2: quality performance vs benchmark — be specific about whether they are consistently above, improving, or a chronic problem. Sentence 3: one clear, actionable recommendation or concern for the sales manager. No bullets, no headers, plain prose.`;
   try{
     const resp=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',
-      headers:{'Content-Type':'application/json'},
+      headers:{
+        'Content-Type':'application/json',
+        'x-api-key':ANTHROPIC_KEY,
+        'anthropic-version':'2023-06-01',
+        'anthropic-dangerous-direct-browser-access':'true'
+      },
       body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:220,messages:[{role:'user',content:prompt}]})});
     const data=await resp.json();
     el.className='ai-text';el.textContent=data.content?.[0]?.text||'Narrative unavailable.';
