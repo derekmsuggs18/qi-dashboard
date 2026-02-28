@@ -1,0 +1,1101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Quality Index Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root{--bg:#0d0f14;--sf:#141720;--sf2:#1c2030;--bd:#252a3a;--bd2:#303654;--ac:#e8ff47;--ac2:#47c8ff;--tx:#eef0f8;--tm:#6b7394;--td:#2a3050;--gd:#4df5a5;--wn:#ffd147;--bad:#ff5555;--cr:#ff9f47;}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--bg);color:var(--tx);font-family:'DM Sans',sans-serif;min-height:100vh;}
+#loading{position:fixed;inset:0;background:var(--bg);z-index:999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;}
+#loading.gone{display:none;}
+.spin{width:32px;height:32px;border:2px solid var(--bd2);border-top-color:var(--ac);border-radius:50%;animation:spin .7s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.load-t{font-family:'Bebas Neue';font-size:1.3rem;letter-spacing:.12em;color:var(--ac);}
+.load-s{font-family:'DM Mono';font-size:.6rem;color:var(--tm);letter-spacing:.1em;}
+.load-e{color:var(--bad);font-family:'DM Mono';font-size:.68rem;text-align:center;max-width:500px;line-height:1.7;display:none;white-space:pre-wrap;}
+.hdr{background:var(--sf);border-bottom:1px solid var(--bd);padding:14px 28px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;}
+.hdr h1{font-family:'Bebas Neue';font-size:1.8rem;letter-spacing:.07em;line-height:1;}
+.hdr h1 span{color:var(--ac);}
+.hdr-sub{font-family:'DM Mono';font-size:.55rem;color:var(--tm);letter-spacing:.12em;margin-top:2px;text-transform:uppercase;}
+.badges{display:flex;gap:5px;flex-wrap:wrap;align-items:center;}
+.badge{font-family:'DM Mono';font-size:.55rem;padding:3px 7px;border-radius:2px;letter-spacing:.07em;text-transform:uppercase;}
+.badge-g{border:1px solid rgba(77,245,165,.35);color:var(--gd);background:rgba(77,245,165,.07);}
+.badge-b{border:1px solid rgba(71,200,255,.3);color:var(--ac2);background:rgba(71,200,255,.06);}
+.nav{background:var(--sf);border-bottom:1px solid var(--bd);display:flex;padding:0 28px;overflow-x:auto;}
+.ntab{font-family:'DM Mono';font-size:.58rem;letter-spacing:.11em;text-transform:uppercase;padding:10px 14px;cursor:pointer;color:var(--tm);border:none;border-bottom:2px solid transparent;background:none;transition:all .18s;white-space:nowrap;}
+.ntab.act{color:var(--ac);border-bottom-color:var(--ac);}
+.ntab:hover:not(.act){color:var(--tx);}
+.wrap{max-width:1600px;margin:0 auto;padding:20px 28px;}
+.page{display:none;}.page.act{display:block;}
+.tog{display:flex;gap:3px;flex-wrap:wrap;}
+.tb{font-family:'DM Mono';font-size:.55rem;letter-spacing:.08em;text-transform:uppercase;padding:3px 7px;border-radius:2px;cursor:pointer;background:var(--sf2);border:1px solid var(--bd);color:var(--tm);transition:all .14s;}
+.tb:hover{border-color:var(--bd2);color:var(--tx);}
+.tb.act{background:rgba(232,255,71,.1);border-color:rgba(232,255,71,.4);color:var(--ac);}
+.tb.comb.act{background:rgba(71,200,255,.14);border-color:rgba(71,200,255,.5);color:var(--ac2);}
+.sh{display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap;}
+.sh-t{font-family:'Bebas Neue';font-size:1rem;letter-spacing:.1em;}
+.sh-l{flex:1;height:1px;background:var(--bd);min-width:16px;}
+.sh-tag{font-family:'DM Mono';font-size:.54rem;color:var(--tm);background:var(--sf2);border:1px solid var(--bd);padding:2px 6px;border-radius:2px;letter-spacing:.09em;}
+.krow{display:grid;grid-template-columns:repeat(5,1fr);gap:11px;margin-bottom:18px;}
+.kc{background:var(--sf);border:1px solid var(--bd);padding:14px 15px;border-radius:4px;position:relative;overflow:hidden;cursor:pointer;transition:border-color .18s,transform .14s;}
+.kc::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--kl,var(--ac));}
+.kc:hover{border-color:var(--bd2);transform:translateY(-1px);}
+.kl{font-family:'DM Mono';font-size:.55rem;letter-spacing:.14em;text-transform:uppercase;color:var(--tm);margin-bottom:4px;}
+.kv{font-family:'Bebas Neue';font-size:1.9rem;letter-spacing:.04em;line-height:1;}
+.ks{font-family:'DM Mono';font-size:.56rem;color:var(--tm);margin-top:3px;}
+.kbadge{font-family:'DM Mono';font-size:.53rem;padding:2px 5px;border-radius:2px;position:absolute;top:10px;right:9px;}
+.ku{background:rgba(77,245,165,.12);color:var(--gd);}
+.kd2{background:rgba(255,85,85,.1);color:var(--bad);}
+.narr{background:var(--sf);border:1px solid var(--bd);border-radius:4px;padding:16px 20px;margin-bottom:18px;position:relative;}
+.narr::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:linear-gradient(180deg,var(--ac),var(--ac2));border-radius:4px 0 0 4px;}
+.narr-h{display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap;}
+.narr-icon{width:22px;height:22px;background:rgba(232,255,71,.1);border:1px solid rgba(232,255,71,.2);border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:.75rem;flex-shrink:0;}
+.narr-title{font-family:'Bebas Neue';font-size:.95rem;letter-spacing:.1em;color:var(--ac);}
+.narr-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;}
+.ni{background:var(--sf2);border:1px solid var(--bd);border-radius:3px;padding:11px 13px;}
+.nil{font-family:'DM Mono';font-size:.52rem;letter-spacing:.13em;text-transform:uppercase;color:var(--tm);margin-bottom:5px;}
+.nit{font-size:.75rem;line-height:1.55;}
+.hi{color:var(--ac);font-weight:600;}.hig{color:var(--gd);}.hib{color:var(--bad);}.hiw{color:var(--wn);}
+.crow{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:18px;}
+.crow-2{display:grid;grid-template-columns:2fr 1fr;gap:12px;margin-bottom:18px;}
+.cc{background:var(--sf);border:1px solid var(--bd);border-radius:4px;padding:14px 16px;}
+.ct{font-family:'DM Mono';font-size:.54rem;text-transform:uppercase;letter-spacing:.13em;color:var(--tm);margin-bottom:11px;}
+.cw{position:relative;height:180px;}
+.cw-lg{position:relative;height:210px;}
+.bench-bar{display:flex;align-items:center;gap:8px;padding:7px 11px;background:rgba(232,255,71,.04);border:1px solid rgba(232,255,71,.14);border-radius:3px;margin-bottom:12px;font-family:'DM Mono';font-size:.6rem;color:var(--ac);}
+.bench-dot{width:6px;height:6px;background:var(--ac);border-radius:50%;flex-shrink:0;}
+.noise-banner{display:none;align-items:center;gap:10px;padding:7px 12px;background:rgba(71,200,255,.05);border:1px solid rgba(71,200,255,.2);border-radius:3px;margin-bottom:12px;font-family:'DM Mono';font-size:.58rem;color:var(--ac2);}
+.noise-banner.vis{display:flex;}
+.tier{display:inline-block;padding:2px 6px;border-radius:2px;font-family:'DM Mono';font-size:.53rem;font-weight:600;letter-spacing:.07em;text-transform:uppercase;}
+.tier-excellent{background:rgba(77,245,165,.15);color:var(--gd);border:1px solid rgba(77,245,165,.3);}
+.tier-ok{background:rgba(71,200,255,.1);color:var(--ac2);border:1px solid rgba(71,200,255,.25);}
+.tier-watch{background:rgba(255,209,71,.1);color:var(--wn);border:1px solid rgba(255,209,71,.3);}
+.tier-chronic{background:rgba(255,85,85,.12);color:var(--bad);border:1px solid rgba(255,85,85,.3);}
+.chronic-panel{background:var(--sf);border:1px solid rgba(255,85,85,.3);border-radius:4px;padding:14px 16px;margin-bottom:18px;position:relative;}
+.chronic-h{display:flex;align-items:center;gap:9px;margin-bottom:12px;flex-wrap:wrap;}
+.chronic-title{font-family:'Bebas Neue';font-size:.95rem;letter-spacing:.1em;color:var(--bad);}
+.chronic-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;}
+.chronic-card{background:var(--sf2);border:1px solid rgba(255,85,85,.2);border-radius:3px;padding:10px 12px;cursor:pointer;transition:border-color .15s;}
+.chronic-card:hover{border-color:rgba(255,85,85,.5);}
+.chronic-card::before{content:'';display:block;height:2px;background:var(--bad);margin:-10px -12px 8px;border-radius:3px 3px 0 0;}
+.cc-alpha{font-family:'DM Mono';font-size:.6rem;color:var(--tm);margin-bottom:2px;}
+.cc-name{font-size:.7rem;font-weight:600;margin-bottom:6px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.cc-stats{display:grid;grid-template-columns:1fr 1fr;gap:4px;}
+.cc-stat-l{font-family:'DM Mono';font-size:.51rem;color:var(--tm);}
+.cc-stat-v{font-family:'DM Mono';font-size:.66rem;font-weight:500;}
+.freq-bar{height:3px;background:var(--sf);border-radius:2px;margin-top:6px;overflow:hidden;}
+.freq-fill{height:100%;background:linear-gradient(90deg,var(--wn),var(--bad));border-radius:2px;}
+.alert-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:18px;}
+.alert-panel{background:var(--sf);border-radius:4px;padding:14px 16px;}
+.alert-panel.new-acct{border:1px solid rgba(77,245,165,.3);}
+.alert-panel.dormant{border:1px solid rgba(255,159,71,.3);}
+.alert-h{display:flex;align-items:center;gap:8px;margin-bottom:11px;}
+.alert-title{font-family:'Bebas Neue';font-size:.9rem;letter-spacing:.1em;}
+.alert-title.new{color:var(--gd);}
+.alert-title.dorm{color:var(--cr);}
+.alert-item{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--bd);font-size:.75rem;}
+.alert-item:last-child{border-bottom:none;}
+.alert-alpha{font-family:'DM Mono';font-size:.63rem;color:var(--tm);background:var(--sf2);padding:1px 5px;border-radius:2px;border:1px solid var(--bd);flex-shrink:0;}
+.alert-meta{font-family:'DM Mono';font-size:.6rem;color:var(--tm);margin-left:auto;}
+.tcol{display:grid;grid-template-columns:1fr 1fr;gap:13px;margin-bottom:18px;}
+.tw{background:var(--sf);border:1px solid var(--bd);border-radius:4px;overflow:hidden;}
+.tscroll{overflow-x:auto;max-height:430px;overflow-y:auto;}
+.dt{width:100%;border-collapse:collapse;}
+.dt thead th{background:var(--sf2);padding:7px 10px;text-align:left;font-family:'DM Mono';font-size:.52rem;letter-spacing:.11em;text-transform:uppercase;color:var(--tm);border-bottom:1px solid var(--bd);white-space:nowrap;position:sticky;top:0;font-weight:400;}
+.dt thead th.nr{text-align:right;}
+.dt tbody tr{border-bottom:1px solid var(--bd);transition:background .1s;}
+.dt tbody tr:last-child{border-bottom:none;}
+.dt tbody tr:hover{background:var(--sf2);}
+.dt tbody td{padding:6px 10px;font-size:.76rem;vertical-align:middle;}
+.dt tbody td.nr{text-align:right;font-family:'DM Mono';font-size:.7rem;}
+.dt tbody tr.clickable{cursor:pointer;}
+.pill{display:inline-block;padding:2px 6px;border-radius:2px;font-family:'DM Mono';font-size:.55rem;font-weight:500;}
+.p-act{background:rgba(77,245,165,.1);color:var(--gd);border:1px solid rgba(77,245,165,.25);}
+.p-hold{background:rgba(255,159,71,.08);color:var(--cr);border:1px solid rgba(255,159,71,.28);}
+.alpha{font-family:'DM Mono';font-size:.66rem;color:var(--tm);background:var(--sf2);padding:2px 5px;border-radius:2px;border:1px solid var(--bd);}
+.dn{max-width:165px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:500;}
+.qp{display:inline-block;padding:2px 6px;border-radius:2px;font-family:'DM Mono';font-size:.66rem;font-weight:500;}
+.qe{background:rgba(77,245,165,.12);color:var(--gd);border:1px solid rgba(77,245,165,.28);}
+.qg{background:rgba(232,255,71,.1);color:var(--ac);border:1px solid rgba(232,255,71,.22);}
+.qw{background:rgba(255,209,71,.1);color:var(--wn);border:1px solid rgba(255,209,71,.28);}
+.qb{background:rgba(255,85,85,.1);color:var(--bad);border:1px solid rgba(255,85,85,.28);}
+.rank{display:inline-flex;align-items:center;justify-content:center;width:19px;height:19px;background:var(--sf2);border:1px solid var(--bd);border-radius:2px;font-family:'DM Mono';font-size:.56rem;color:var(--tm);}
+.rank.top{background:rgba(232,255,71,.12);border-color:rgba(232,255,71,.4);color:var(--ac);}
+.tv-up{color:var(--gd);font-family:'DM Mono';font-size:.66rem;}
+.tv-dn{color:var(--bad);font-family:'DM Mono';font-size:.66rem;}
+.tv-fl{color:var(--tm);font-family:'DM Mono';font-size:.66rem;}
+.sbars{padding:11px 14px;}
+.sbar-row{display:flex;align-items:center;gap:9px;padding:6px 0;border-bottom:1px solid var(--bd);cursor:pointer;}
+.sbar-row:last-child{border-bottom:none;}
+.sbar-row:hover{background:rgba(255,255,255,.02);}
+.sbar-name{font-size:.72rem;font-weight:500;min-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.sbar-track{flex:1;height:5px;background:var(--sf2);border-radius:3px;overflow:hidden;}
+.sbar-fill{height:100%;border-radius:3px;background:linear-gradient(90deg,var(--ac2),var(--ac));transition:width .85s cubic-bezier(.25,1,.5,1);}
+.sbar-meta{font-family:'DM Mono';font-size:.58rem;color:var(--tm);min-width:135px;text-align:right;line-height:1.55;}
+.flip-inner.flipped .flip-front{display:none;}
+.flip-inner.flipped .flip-back{display:block;}
+.flip-front{display:block;}.flip-back{display:none;}
+.flip-btn{font-family:'DM Mono';font-size:.54rem;letter-spacing:.09em;text-transform:uppercase;padding:3px 8px;border-radius:2px;cursor:pointer;background:var(--sf2);border:1px solid var(--bd2);color:var(--ac2);transition:all .14s;}
+.flip-btn:hover{border-color:var(--ac2);}
+.rep-main{cursor:pointer;}
+.rep-detail{display:none;background:rgba(28,32,48,.7);}
+.rep-detail.open{display:table-row-group;}
+.rep-detail-inner{padding:9px 13px 11px;}
+.worst-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-top:7px;}
+.worst-card{background:var(--bg);border:1px solid var(--bd);border-radius:3px;padding:7px 8px;}
+.wc-label{font-family:'DM Mono';font-size:.51rem;color:var(--tm);margin-bottom:2px;}
+.wc-val{font-family:'DM Mono';font-size:.68rem;font-weight:500;}
+.wc-name{font-size:.63rem;color:var(--tm);margin-bottom:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.rfil{display:flex;align-items:center;gap:8px;margin-bottom:11px;flex-wrap:wrap;}
+.rfil-lbl{font-family:'DM Mono';font-size:.55rem;color:var(--tm);letter-spacing:.09em;text-transform:uppercase;}
+.rsel{background:var(--sf2);border:1px solid var(--bd2);border-radius:3px;padding:4px 8px;color:var(--tx);font-family:'DM Mono';font-size:.61rem;outline:none;cursor:pointer;}
+.rsel:focus{border-color:var(--ac);}
+
+/* SALESMAN SCORECARD */
+.scorecard-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:18px;}
+.sc-card{background:var(--sf);border:1px solid var(--bd);border-radius:4px;padding:14px 16px;cursor:pointer;transition:border-color .18s,transform .14s;}
+.sc-card:hover{border-color:var(--bd2);transform:translateY(-1px);}
+.sc-card.active{border-color:rgba(232,255,71,.4);background:rgba(232,255,71,.03);}
+.sc-name{font-size:.82rem;font-weight:600;margin-bottom:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.sc-meta{font-family:'DM Mono';font-size:.54rem;color:var(--tm);margin-bottom:10px;}
+.sc-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:10px;}
+.sc-stat{background:var(--sf2);border:1px solid var(--bd);border-radius:3px;padding:7px 9px;}
+.sc-stat-l{font-family:'DM Mono';font-size:.5rem;color:var(--tm);letter-spacing:.1em;text-transform:uppercase;margin-bottom:2px;}
+.sc-stat-v{font-family:'Bebas Neue';font-size:1.2rem;letter-spacing:.04em;line-height:1;}
+.sc-trend{height:42px;position:relative;}
+.sc-detail{display:none;border-top:1px solid var(--bd);margin-top:12px;padding-top:12px;}
+.sc-detail.open{display:block;}
+.sc-acct-row{display:flex;align-items:center;gap:7px;padding:4px 0;border-bottom:1px solid var(--bd);font-size:.72rem;}
+.sc-acct-row:last-child{border-bottom:none;}
+
+/* ACCOUNT DRILL-DOWN MODAL */
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:400;backdrop-filter:blur(4px);align-items:center;justify-content:center;}
+.modal-bg.open{display:flex;}
+.modal{background:var(--sf);border:1px solid var(--bd2);border-radius:6px;padding:22px;width:min(820px,94vw);position:relative;max-height:88vh;overflow-y:auto;}
+.modal-x{position:absolute;top:11px;right:13px;cursor:pointer;font-size:1rem;color:var(--tm);background:none;border:none;}
+.modal-x:hover{color:var(--tx);}
+.modal-title{font-family:'Bebas Neue';font-size:1.4rem;letter-spacing:.08em;margin-bottom:2px;}
+.modal-sub{font-family:'DM Mono';font-size:.56rem;color:var(--tm);letter-spacing:.1em;margin-bottom:16px;}
+.modal-krow{display:grid;grid-template-columns:repeat(4,1fr);gap:9px;margin-bottom:16px;}
+.modal-kc{background:var(--sf2);border:1px solid var(--bd);border-radius:3px;padding:10px 12px;}
+.modal-kl{font-family:'DM Mono';font-size:.5rem;letter-spacing:.13em;text-transform:uppercase;color:var(--tm);margin-bottom:3px;}
+.modal-kv{font-family:'Bebas Neue';font-size:1.4rem;letter-spacing:.04em;line-height:1;}
+.modal-cw{height:190px;position:relative;margin-bottom:14px;}
+.modal-months{display:grid;grid-template-columns:repeat(auto-fill,minmax(90px,1fr));gap:7px;margin-bottom:14px;}
+.modal-m{background:var(--sf2);border:1px solid var(--bd);border-radius:3px;padding:8px 10px;}
+.modal-m-l{font-family:'DM Mono';font-size:.5rem;color:var(--tm);margin-bottom:2px;}
+.modal-m-v{font-family:'Bebas Neue';font-size:1rem;letter-spacing:.03em;line-height:1;color:var(--ac2);}
+.modal-krow2{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;}
+
+/* AI NARRATIVE */
+.ai-box{background:var(--bg);border:1px solid var(--bd2);border-radius:3px;padding:12px 14px;margin-top:10px;}
+.ai-box::before{content:'';display:block;position:absolute;left:0;top:0;bottom:0;width:3px;background:linear-gradient(180deg,var(--ac),var(--ac2));border-radius:3px 0 0 3px;}
+.ai-label{font-family:'DM Mono';font-size:.52rem;letter-spacing:.13em;text-transform:uppercase;color:var(--ac);margin-bottom:6px;display:flex;align-items:center;gap:5px;}
+.ai-dot{width:5px;height:5px;background:var(--ac);border-radius:50%;animation:pulse 1.5s ease infinite;flex-shrink:0;}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:.3;}}
+.ai-text{font-size:.79rem;line-height:1.65;}
+.ai-loading{color:var(--tm);font-family:'DM Mono';font-size:.7rem;}
+
+/* SEARCH */
+.search-wrap{background:var(--sf);border:1px solid var(--bd);border-radius:4px;padding:18px 20px;}
+.search-in{width:100%;background:var(--sf2);border:1px solid var(--bd2);border-radius:3px;padding:8px 11px;color:var(--tx);font-family:'DM Sans';font-size:.83rem;outline:none;transition:border-color .18s;margin-bottom:14px;}
+.search-in:focus{border-color:rgba(232,255,71,.45);}
+.search-in::placeholder{color:var(--td);}
+.search-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;height:130px;color:var(--td);font-family:'DM Mono';font-size:.66rem;gap:7px;}
+.acard{background:var(--sf2);border:1px solid var(--bd);border-radius:4px;padding:14px 16px;margin-bottom:9px;}
+.acard-h{display:flex;align-items:center;gap:8px;margin-bottom:11px;flex-wrap:wrap;}
+.acard-name{font-weight:600;font-size:.88rem;}
+.acard-months{display:grid;grid-template-columns:repeat(auto-fill,minmax(88px,1fr));gap:7px;margin-bottom:11px;}
+.am{background:var(--bg);border:1px solid var(--bd);border-radius:3px;padding:7px 9px;}
+.am-l{font-family:'DM Mono';font-size:.5rem;color:var(--tm);margin-bottom:2px;}
+.am-v{font-family:'Bebas Neue';font-size:1rem;letter-spacing:.04em;line-height:1;color:var(--ac2);}
+
+/* EXPORT */
+.export-btn{font-family:'DM Mono';font-size:.55rem;letter-spacing:.1em;text-transform:uppercase;padding:4px 11px;border-radius:2px;cursor:pointer;background:rgba(232,255,71,.08);border:1px solid rgba(232,255,71,.25);color:var(--ac);transition:all .15s;}
+.export-btn:hover{background:rgba(232,255,71,.15);border-color:rgba(232,255,71,.5);}
+
+.trend-cols{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:18px;}
+.foot{text-align:center;font-family:'DM Mono';font-size:.52rem;color:var(--td);letter-spacing:.07em;padding:14px 0 8px;border-top:1px solid var(--bd);margin-top:8px;}
+
+@media print{.hdr,.nav,.export-btn,.ntab{display:none!important;}.page{display:block!important;}.wrap{padding:0;}}
+</style>
+</head>
+<body>
+
+<div id="loading">
+  <div class="spin"></div>
+  <div class="load-t">LOADING DASHBOARD</div>
+  <div class="load-s" id="load-s">Connecting to Google Sheets…</div>
+  <div class="load-e" id="load-e"></div>
+</div>
+
+<!-- ACCOUNT DRILL-DOWN MODAL -->
+<div class="modal-bg" id="acct-modal">
+  <div class="modal">
+    <button class="modal-x" onclick="closeAcctModal()">✕</button>
+    <div class="modal-title" id="am-title">—</div>
+    <div class="modal-sub" id="am-sub">—</div>
+    <div class="modal-krow" id="am-krow"></div>
+    <div style="font-family:'DM Mono';font-size:.52rem;color:var(--tm);letter-spacing:.13em;text-transform:uppercase;margin-bottom:8px">MONTHLY DETAIL</div>
+    <div class="modal-months" id="am-months"></div>
+    <div style="font-family:'DM Mono';font-size:.52rem;color:var(--tm);letter-spacing:.13em;text-transform:uppercase;margin-bottom:8px">QI TREND</div>
+    <div class="modal-cw"><canvas id="am-chart"></canvas></div>
+    <div class="ai-box" style="position:relative" id="am-ai">
+      <div class="ai-label"><div class="ai-dot"></div>AI ACCOUNT NARRATIVE</div>
+      <div class="ai-text ai-loading" id="am-ai-text">⟳ Generating…</div>
+    </div>
+  </div>
+</div>
+
+<!-- KPI TREND MODAL -->
+<div class="modal-bg" id="kpi-modal">
+  <div class="modal" style="max-width:620px">
+    <button class="modal-x" onclick="document.getElementById('kpi-modal').classList.remove('open')">✕</button>
+    <div class="modal-title" id="km-title"></div>
+    <div class="modal-sub" id="km-sub"></div>
+    <div class="modal-cw"><canvas id="km-chart"></canvas></div>
+  </div>
+</div>
+
+<div id="app" style="display:none">
+  <div class="hdr">
+    <div>
+      <h1>QUALITY INDEX <span>DASHBOARD</span></h1>
+      <div class="hdr-sub" id="hdr-sub">Loading…</div>
+    </div>
+    <div class="badges">
+      <div class="badge badge-g">✓ -Z Rolled Up</div>
+      <div class="badge badge-g">✓ Active + Cr Hold</div>
+      <div class="badge badge-b" id="months-badge">—</div>
+      <div class="badge badge-b">● LIVE</div>
+      <button class="export-btn" onclick="exportSummary()">⬇ Export Summary</button>
+    </div>
+  </div>
+
+  <div class="nav">
+    <button class="ntab act" onclick="showPage('ov',this)">Overview</button>
+    <button class="ntab" onclick="showPage('cu',this)">Customers</button>
+    <button class="ntab" onclick="showPage('wl',this)">Watch List</button>
+    <button class="ntab" onclick="showPage('sc',this)">Scorecards</button>
+    <button class="ntab" onclick="showPage('tr',this)">Trends</button>
+    <button class="ntab" onclick="showPage('sr',this)">Search</button>
+  </div>
+
+  <div class="wrap">
+
+    <!-- OVERVIEW -->
+    <div class="page act" id="page-ov">
+      <div class="krow">
+        <div class="kc" style="--kl:var(--ac2)" onclick="openKpiModal('sales')"><div class="kl">Company Sales</div><div class="kv" id="kv-sales">—</div><div class="ks" id="ks-sales"></div><span class="kbadge" id="kb-sales"></span></div>
+        <div class="kc" style="--kl:var(--wn)" onclick="openKpiModal('qi')"><div class="kl">QI Benchmark</div><div class="kv" id="kv-qi">—</div><div class="ks">Replacements per $100K</div><span class="kbadge" id="kb-qi"></span></div>
+        <div class="kc" style="--kl:var(--ac)" onclick="openKpiModal('accts')"><div class="kl">Qualified Accounts</div><div class="kv" id="kv-accts">—</div><div class="ks" id="ks-accts"></div><span class="kbadge" id="kb-accts"></span></div>
+        <div class="kc" style="--kl:var(--gd)" onclick="openKpiModal('trans')"><div class="kl">Transacting</div><div class="kv" id="kv-trans">—</div><div class="ks" id="ks-trans"></div><span class="kbadge" id="kb-trans"></span></div>
+        <div class="kc" style="--kl:var(--gd)" onclick="openKpiModal('exc')"><div class="kl">Excellent QI ≤5</div><div class="kv" id="kv-exc">—</div><div class="ks">Below 5 per $100K</div><span class="kbadge" id="kb-exc"></span></div>
+      </div>
+
+      <div class="narr">
+        <div class="narr-h">
+          <div class="narr-icon">📋</div>
+          <div class="narr-title">MONTHLY NARRATIVE</div>
+          <div class="tog" id="tog-narr" style="margin-left:auto"></div>
+        </div>
+        <div class="narr-grid" id="narr-grid"></div>
+      </div>
+
+      <!-- CHRONIC OFFENDERS -->
+      <div id="chronic-section" style="display:none;margin-bottom:18px">
+        <div class="chronic-panel">
+          <div class="chronic-h">
+            <span style="font-size:1rem">🔴</span>
+            <div class="chronic-title">CHRONIC OFFENDERS</div>
+            <div class="sh-tag" id="chronic-tag"></div>
+          </div>
+          <div class="chronic-grid" id="chronic-grid"></div>
+        </div>
+      </div>
+
+      <!-- NEW + DORMANT -->
+      <div class="alert-row" id="alert-row" style="display:none">
+        <div class="alert-panel new-acct">
+          <div class="alert-h"><span>🟢</span><div class="alert-title new">NEW / RETURNING</div><div class="sh-tag" id="new-tag" style="margin-left:auto"></div></div>
+          <div id="new-list"></div>
+        </div>
+        <div class="alert-panel dormant">
+          <div class="alert-h"><span>🟠</span><div class="alert-title dorm">DORMANT ALERT</div><div class="sh-tag" id="dorm-tag" style="margin-left:auto"></div></div>
+          <div id="dorm-list"></div>
+        </div>
+      </div>
+
+      <div class="sh"><div class="sh-t">QUALITY DISTRIBUTION</div><div class="sh-l"></div><div class="tog" id="tog-dist"></div></div>
+      <div class="bench-bar"><div class="bench-dot"></div><span id="bench-txt">—</span></div>
+      <div class="noise-banner" id="noise-banner"><span>⚡</span><span id="noise-txt">—</span></div>
+      <div class="crow">
+        <div class="cc"><div class="ct">QI Buckets</div><div class="cw"><canvas id="ch-buckets"></canvas></div></div>
+        <div class="cc"><div class="ct">vs Benchmark</div><div class="cw"><canvas id="ch-bench"></canvas></div></div>
+        <div class="cc"><div class="ct">Sales by State (Top 12)</div><div class="cw"><canvas id="ch-state"></canvas></div></div>
+      </div>
+
+      <div class="tcol">
+        <div>
+          <div class="sh"><div class="sh-t">SALESMAN PERFORMANCE</div><div class="sh-l"></div><div class="tog" id="tog-rep"></div><button class="flip-btn" id="flip-btn" onclick="doFlip()">↺ Quality View</button></div>
+          <div class="flip-wrap">
+            <div class="flip-inner" id="flip-inner">
+              <div class="flip-front tw"><div class="sbars" id="sbars"></div></div>
+              <div class="flip-back tw"><div class="tscroll"><table class="dt">
+                <thead><tr><th>Rep</th><th class="nr">Accts</th><th class="nr">Sales</th><th class="nr" style="color:var(--ac2)">Wtd QI ↓ expand</th></tr></thead>
+                <tbody id="qi-rank-body"></tbody>
+              </table></div></div>
+            </div>
+          </div>
+        </div>
+        <div>
+          <div class="sh"><div class="sh-t">STATE BREAKDOWN</div><div class="sh-l"></div><div class="tog" id="tog-state"></div></div>
+          <div class="tw"><div class="tscroll"><table class="dt">
+            <thead><tr><th>State</th><th class="nr">Accts</th><th class="nr">Sales</th><th class="nr">Wtd QI</th></tr></thead>
+            <tbody id="state-body"></tbody>
+          </table></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CUSTOMERS -->
+    <div class="page" id="page-cu">
+      <div class="sh"><div class="sh-t">CUSTOMERS</div><div class="sh-l"></div><div class="tog" id="tog-cust"></div></div>
+      <div class="rfil">
+        <span class="rfil-lbl">Rep:</span>
+        <select class="rsel" id="rep-fil-cust" onchange="renderCust()"><option value="">All</option></select>
+        <span class="rfil-lbl" style="margin-left:8px">Tier:</span>
+        <select class="rsel" id="tier-fil-cust" onchange="renderCust()">
+          <option value="">All Tiers</option><option value="EXCELLENT">Excellent</option>
+          <option value="OK">OK</option><option value="WATCH">Watch</option><option value="CHRONIC">Chronic</option>
+        </select>
+        <span class="rfil-lbl" style="margin-left:8px">Sort:</span>
+        <select class="rsel" id="sort-cust" onchange="renderCust()">
+          <option value="sales">Sales ↓</option><option value="qi-worst">QI Worst</option><option value="qi-best">QI Best</option>
+        </select>
+        <span class="rfil-lbl" style="margin-left:8px;color:var(--tm)" id="cust-count"></span>
+      </div>
+      <div class="tw"><div class="tscroll"><table class="dt">
+        <thead><tr><th>#</th><th>Alpha</th><th>Dealer</th><th>Status</th><th>Rep</th><th>St</th><th class="nr">Sales</th><th class="nr">Repl</th><th class="nr">QI</th><th class="nr">vs Bench</th><th>Tier</th></tr></thead>
+        <tbody id="cust-body"></tbody>
+      </table></div></div>
+    </div>
+
+    <!-- WATCH LIST -->
+    <div class="page" id="page-wl">
+      <div class="sh"><div class="sh-t">QUALITY WATCH LIST</div><div class="sh-l"></div><div class="tog" id="tog-wl"></div></div>
+      <div class="rfil">
+        <span class="rfil-lbl">Rep:</span>
+        <select class="rsel" id="rep-fil-wl" onchange="renderWL()"><option value="">All</option></select>
+        <span class="rfil-lbl" style="margin-left:8px;color:var(--tm)" id="wl-count"></span>
+      </div>
+      <div class="bench-bar"><div class="bench-dot"></div><span id="wl-bench-txt">—</span></div>
+      <div class="tw"><div class="tscroll"><table class="dt">
+        <thead><tr><th>Alpha</th><th>Dealer</th><th>Status</th><th>Rep</th><th>St</th><th class="nr">Sales</th><th class="nr">QI</th><th class="nr">Over Bench</th><th>Tier</th></tr></thead>
+        <tbody id="wl-body"></tbody>
+      </table></div></div>
+    </div>
+
+    <!-- SCORECARDS -->
+    <div class="page" id="page-sc">
+      <div class="sh"><div class="sh-t">SALESMAN SCORECARDS</div><div class="sh-l"></div><div class="sh-tag" id="sc-range-tag">—</div></div>
+      <div class="scorecard-grid" id="scorecard-grid"></div>
+    </div>
+
+    <!-- TRENDS -->
+    <div class="page" id="page-tr">
+      <div class="sh"><div class="sh-t">TRENDS</div><div class="sh-l"></div><div class="sh-tag" id="trend-range-tag"></div></div>
+      <div class="crow-2">
+        <div class="cc"><div class="ct">Company Sales — Monthly</div><div class="cw-lg"><canvas id="ch-sales-trend"></canvas></div></div>
+        <div class="cc"><div class="ct">QI Benchmark — Monthly</div><div class="cw-lg"><canvas id="ch-qi-trend"></canvas></div></div>
+      </div>
+      <div class="trend-cols">
+        <div>
+          <div class="sh"><div class="sh-t">MOST IMPROVED</div><div class="sh-l"></div><div class="sh-tag" id="imp-tag"></div></div>
+          <div class="tw"><div class="tscroll"><table class="dt">
+            <thead><tr><th>Alpha</th><th>Dealer</th><th>St</th><th class="nr">Prior QI</th><th class="nr">Latest QI</th><th class="nr">Δ</th><th class="nr">Sales</th></tr></thead>
+            <tbody id="improved-body"></tbody>
+          </table></div></div>
+        </div>
+        <div>
+          <div class="sh"><div class="sh-t">NEEDS ATTENTION</div><div class="sh-l"></div><div class="sh-tag" id="wor-tag"></div></div>
+          <div class="tw"><div class="tscroll"><table class="dt">
+            <thead><tr><th>Alpha</th><th>Dealer</th><th>St</th><th class="nr">Prior QI</th><th class="nr">Latest QI</th><th class="nr">Δ</th><th class="nr">Sales</th></tr></thead>
+            <tbody id="worsened-body"></tbody>
+          </table></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SEARCH -->
+    <div class="page" id="page-sr">
+      <div class="search-wrap">
+        <div class="sh" style="margin-bottom:11px"><div class="sh-t">ACCOUNT SEARCH</div><div class="sh-l"></div><div class="sh-tag" id="search-tag">—</div></div>
+        <input class="search-in" id="search-in" placeholder="Search alpha, dealer name, salesman, or state…" oninput="doSearch(this.value)">
+        <div id="search-results"><div class="search-empty"><span style="font-size:1.4rem">🔍</span><span>Type to search across all months</span></div></div>
+      </div>
+    </div>
+
+    <div class="foot" id="foot">Quality Index Dashboard · Live · -Z accounts rolled up · QI = Replacements per $100K · Lower is better</div>
+  </div>
+</div>
+
+<script>
+const SHEET_ID='1yZlaQ8haMOtn9xLa78Zn5odH4R5hbME67migsid17lA';
+const API_KEY='AIzaSyBI8ufs8JUw0BG4zc2K2tU63We-F-3Fphw';
+const BASE_URL='https://sheets.googleapis.com/v4/spreadsheets';
+const COMB_MIN_MONTHS=4, COMB_MIN_SALES=50000, CHRONIC_MONTHS=4;
+const TREND_MIN_SALES=25000, TREND_MIN_IMP=-2, TREND_MIN_WOR=3;
+
+let MONTHS=[],DATA={},SI={},CUR='',CHARTS={},flipped=false;
+let acctModalChart=null, kpiModalChart=null;
+
+const f$=v=>{if(!v&&v!==0)return'—';if(v>=1e6)return'$'+(v/1e6).toFixed(2)+'M';if(v>=1000)return'$'+(v/1e3).toFixed(0)+'K';return'$'+v.toFixed(0);};
+const fqi=v=>v>9999?'>9999':v.toFixed(2);
+const fmtM=m=>{if(!m)return'';const[y,mo]=m.split('-');return['','Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][+mo]+' '+y.slice(2);};
+const qcls=(qi,b)=>qi<=5?'qe':qi<=b?'qg':qi<=25?'qw':'qb';
+const spill=s=>s==='Cr Hold'?'<span class="pill p-hold">Cr Hold</span>':'<span class="pill p-act">Active</span>';
+const setLS=t=>document.getElementById('load-s').textContent=t;
+const bench=()=>CUR==='combined'?combBench():(DATA[CUR]?.benchmark||0);
+const combBench=()=>{let ts=0,tr=0;MONTHS.forEach(m=>DATA[m].accounts.forEach(a=>{ts+=a.sales;tr+=a.repl;}));return ts>0?tr/ts*100000:0;};
+const setBadge=(id,cur,prev,invert=false)=>{
+  const el=document.getElementById(id);if(!el)return;
+  if(prev===null||prev===undefined||prev===0){el.textContent='';el.className='kbadge';return;}
+  const pct=(cur-prev)/prev*100,good=invert?pct<0:pct>=0;
+  el.className='kbadge '+(good?'ku':'kd2');el.textContent=(pct>=0?'+':'')+pct.toFixed(1)+'%';
+};
+const getTier=(qi,b,freqAbove,totalMonths)=>{
+  if(qi<=5)return'EXCELLENT';
+  const r=totalMonths>0?freqAbove/totalMonths:0;
+  if(r>=0.57)return'CHRONIC';if(r>=0.35)return'WATCH';return'OK';
+};
+const tierBadge=t=>{const m={EXCELLENT:'tier-excellent',OK:'tier-ok',WATCH:'tier-watch',CHRONIC:'tier-chronic'};return`<span class="tier ${m[t]||'tier-ok'}">${t}</span>`;};
+
+// ── LOAD ─────────────────────────────────
+async function loadDashboard(){
+  try{
+    setLS('Fetching sheet metadata…');
+    const meta=await fetch(`${BASE_URL}/${SHEET_ID}?key=${API_KEY}`).then(r=>r.json());
+    if(meta.error)throw new Error(meta.error.message);
+    const dataTabs=meta.sheets.map(s=>s.properties.title).filter(t=>/^\d{4}-\d{2}$/.test(t)).sort();
+    if(!dataTabs.length)throw new Error('No YYYY-MM tabs found.');
+    for(const tab of dataTabs){
+      setLS(`Loading ${tab}…`);
+      const resp=await fetch(`${BASE_URL}/${SHEET_ID}/values/${encodeURIComponent(tab)}?key=${API_KEY}`).then(r=>r.json());
+      if(resp.error)throw new Error(`Tab ${tab}: ${resp.error.message}`);
+      DATA[tab]=parseTab(resp.values||[],tab);MONTHS.push(tab);
+    }
+    buildSI();setLS('Building dashboard…');init();
+  }catch(e){
+    document.getElementById('load-e').style.display='block';
+    document.getElementById('load-e').textContent='⚠ '+e.message+'\n\nCheck:\n1. Sheet shared as "Anyone with the link can view"\n2. Google Sheets API enabled\n3. API key valid';
+    document.querySelector('.spin').style.display='none';
+    document.querySelector('.load-t').textContent='CONNECTION ERROR';
+  }
+}
+
+function parseTab(rows,month){
+  if(!rows.length)return{accounts:[],benchmark:0,companySales:0,transacting:0};
+  const hdr=rows[0];
+  const ci=name=>hdr.findIndex(h=>String(h||'').trim().toLowerCase()===name.toLowerCase());
+  const iA=ci('Alpha'),iDN=ci('Dealer_Name'),iSt=ci('Status'),iSm=ci('Salesman'),iSt2=ci('State');
+  const iS=ci('Monthly_Sales'),iR=ci('Monthly_Replacements'),iQ=ci('Monthly_QI');
+  const iQB=ci('QI_vs_Benchmark'),iCS=ci('Company_Monthly_Sales'),iCQ=ci('Company_Monthly_QI');
+  const n2=v=>{const x=parseFloat(String(v||'').replace(/[$,]/g,''));return isNaN(x)?0:x;};
+  let benchmark=0,companySales=0;const accounts=[];
+  rows.slice(1).forEach(r=>{
+    if(!r[iA])return;
+    const sales=n2(r[iS]),repl=n2(r[iR]);
+    const qi=iQ>=0&&n2(r[iQ])>0?n2(r[iQ]):(sales>0?repl/sales*100000:0);
+    if(!benchmark&&iCQ>=0&&n2(r[iCQ])>0)benchmark=n2(r[iCQ]);
+    if(!companySales&&iCS>=0&&n2(r[iCS])>0)companySales=n2(r[iCS]);
+    accounts.push({alpha:String(r[iA]||'').trim(),dealer:String(r[iDN]||'').trim(),
+      status:String(r[iSt]||'').trim(),salesman:String(r[iSm]||'').trim(),
+      state:String(r[iSt2]||'').trim(),sales,repl,qi,qivb:iQB>=0?n2(r[iQB]):0,month});
+  });
+  return{accounts,benchmark,companySales,transacting:accounts.filter(a=>a.sales>0).length};
+}
+
+function buildSI(){
+  MONTHS.forEach(m=>DATA[m].accounts.forEach(a=>{
+    if(!SI[a.alpha])SI[a.alpha]={alpha:a.alpha,dealer:a.dealer,salesman:a.salesman,state:a.state,status:a.status,months:{}};
+    SI[a.alpha].months[m]={sales:a.sales,repl:a.repl,qi:a.qi,bench:DATA[m].benchmark};
+  }));
+}
+
+function init(){
+  Chart.defaults.color='#6b7394';Chart.defaults.borderColor='#252a3a';
+  Chart.defaults.font.family='DM Mono';Chart.defaults.font.size=10;
+  CUR=MONTHS[MONTHS.length-1];
+  document.getElementById('hdr-sub').textContent=MONTHS.map(fmtM).join(' · ')+' · -Z rolled up · Active + Cr Hold';
+  document.getElementById('months-badge').textContent=MONTHS.length+' Month'+(MONTHS.length>1?'s':'');
+  document.getElementById('search-tag').textContent=Object.keys(SI).length+' accounts · all months';
+  document.getElementById('sc-range-tag').textContent=fmtM(MONTHS[0])+' → '+fmtM(MONTHS[MONTHS.length-1]);
+  document.getElementById('foot').textContent=`Quality Index Dashboard · ${MONTHS.map(fmtM).join(' + ')} · Live · QI = Replacements per $100K`;
+  buildToggles();populateRepFilters();renderAll();renderScorecards();
+  document.getElementById('loading').classList.add('gone');
+  document.getElementById('app').style.display='block';
+}
+
+// ── TOGGLES ──────────────────────────────
+function buildToggles(){
+  ['tog-narr','tog-dist','tog-rep','tog-state','tog-cust','tog-wl'].forEach(id=>{
+    const el=document.getElementById(id);if(!el)return;
+    el.innerHTML=MONTHS.map(m=>`<button class="tb${m===CUR?' act':''}" data-m="${m}" onclick="setMonth('${m}')">${fmtM(m)}</button>`).join('')
+      +(MONTHS.length>1?`<button class="tb comb${CUR==='combined'?' act':''}" data-m="combined" onclick="setMonth('combined')">Combined</button>`:'');
+  });
+}
+function setMonth(m){
+  CUR=m;
+  document.querySelectorAll('.tb[data-m]').forEach(btn=>btn.classList.toggle('act',btn.dataset.m===m));
+  renderAll();
+}
+function renderAll(){renderKPIs();renderNarr();renderChronic();renderAlerts();renderDist();renderReps();renderState();renderCust();renderWL();}
+
+// ── COMBINED ACCOUNTS (noise filtered) ───
+function curAccts(){
+  if(CUR!=='combined')return DATA[CUR]?.accounts||[];
+  const map={};
+  MONTHS.forEach(m=>DATA[m].accounts.forEach(a=>{
+    if(!map[a.alpha])map[a.alpha]={...a,sales:0,repl:0,monthCount:0,monthsAbove:0};
+    map[a.alpha].sales+=a.sales;map[a.alpha].repl+=a.repl;
+    if(a.sales>0){map[a.alpha].monthCount++;if(a.qi>DATA[m].benchmark)map[a.alpha].monthsAbove++;}
+    map[a.alpha].qi=map[a.alpha].sales>0?map[a.alpha].repl/map[a.alpha].sales*100000:0;
+  }));
+  return Object.values(map).filter(a=>a.monthCount>=COMB_MIN_MONTHS&&a.sales>=COMB_MIN_SALES);
+}
+const curSales=()=>CUR==='combined'?MONTHS.reduce((s,m)=>s+DATA[m].companySales,0):DATA[CUR]?.companySales||0;
+
+// ── KPIs ─────────────────────────────────
+function renderKPIs(){
+  const accts=curAccts(),b=bench(),sales=curSales();
+  const trans=accts.filter(a=>a.sales>0).length,exc=accts.filter(a=>a.sales>0&&a.qi<=5).length;
+  const prevM=MONTHS[MONTHS.indexOf(CUR)-1],p=prevM?DATA[prevM]:null;
+  document.getElementById('kv-sales').textContent=f$(sales);
+  document.getElementById('ks-sales').textContent=p?`vs ${fmtM(prevM)}: ${f$(p.companySales)}`:(CUR==='combined'?MONTHS.length+' months combined':'');
+  setBadge('kb-sales',sales,p?p.companySales:null);
+  document.getElementById('kv-qi').textContent=b.toFixed(2);setBadge('kb-qi',b,p?p.benchmark:null,true);
+  document.getElementById('kv-accts').textContent=accts.length;
+  document.getElementById('ks-accts').textContent=CUR==='combined'?`≥${COMB_MIN_MONTHS} months · ≥$${COMB_MIN_SALES/1000}K`:'Active + Cr Hold';
+  setBadge('kb-accts',accts.length,p?p.accounts.length:null);
+  document.getElementById('kv-trans').textContent=trans;
+  document.getElementById('ks-trans').textContent=accts.length?((trans/accts.length*100).toFixed(0)+'% of qualified'):'';
+  setBadge('kb-trans',trans,p?p.transacting:null);
+  document.getElementById('kv-exc').textContent=exc;
+  setBadge('kb-exc',exc,p?p.accounts.filter(a=>a.sales>0&&a.qi<=5).length:null);
+}
+
+// ── NARRATIVE ────────────────────────────
+function renderNarr(){
+  const accts=curAccts().filter(a=>a.sales>0),b=bench(),sales=curSales();
+  const label=CUR==='combined'?MONTHS.map(fmtM).join(' + '):fmtM(CUR);
+  if(!accts.length){document.getElementById('narr-grid').innerHTML='<div style="color:var(--tm);font-family:DM Mono;font-size:.75rem;grid-column:span 3">No transacting accounts</div>';return;}
+  const top=[...accts].sort((a,b2)=>b2.sales-a.sales)[0];
+  const worst=[...accts].sort((a,b2)=>b2.qi-a.qi)[0];
+  const over=accts.filter(a=>a.qi>b),exc=accts.filter(a=>a.qi<=5);
+  const prevM=MONTHS[MONTHS.indexOf(CUR)-1];
+  const pSales=prevM?DATA[prevM].companySales:null;
+  const trendStr=pSales!=null?((sales-pSales)/pSales*100).toFixed(1):null;
+  const trendHtml=trendStr!=null?(parseFloat(trendStr)>=0?`<span class="hig">+${trendStr}% vs ${fmtM(prevM)}</span>`:`<span class="hib">${trendStr}% vs ${fmtM(prevM)}</span>`):'';
+  const chronicCnt=accts.filter(a=>(a.monthsAbove||0)>=CHRONIC_MONTHS).length;
+  document.getElementById('narr-grid').innerHTML=`
+    <div class="ni"><div class="nil">Sales Performance</div><div class="nit">
+      ${label} total: <span class="hi">${f$(sales)}</span>${trendStr?' · '+trendHtml:''}.
+      Top account <span class="hig">${top.dealer.slice(0,22)} (${top.alpha})</span> at <span class="hi">${f$(top.sales)}</span>. <span class="hi">${accts.length}</span> accounts transacting.
+    </div></div>
+    <div class="ni"><div class="nil">Quality Snapshot</div><div class="nit">
+      Benchmark: <span class="hiw">${b.toFixed(2)}</span> per $100K.
+      <span class="hig">${exc.length} (${(exc.length/accts.length*100).toFixed(0)}%)</span> at excellent QI (≤5).
+      <span class="${over.length>accts.length*.35?'hib':'hiw'}">${over.length}</span> above benchmark.
+    </div></div>
+    <div class="ni"><div class="nil">Watch Items</div><div class="nit">
+      Worst: <span class="hib">${worst.dealer.slice(0,18)} (${worst.alpha})</span> QI <span class="hib">${fqi(worst.qi)}</span>.
+      ${CUR==='combined'&&chronicCnt?`<span class="hib">${chronicCnt} chronic offenders</span> above benchmark ${CHRONIC_MONTHS}+ months.`:over.slice(0,2).map(a=>`<span class="hiw">${a.alpha}</span>`).join(', ')+(over.length>2?` +${over.length-2} more`:'')+' on watch list.'}
+    </div></div>`;
+}
+
+// ── CHRONIC OFFENDERS ────────────────────
+function renderChronic(){
+  const s=document.getElementById('chronic-section');
+  if(CUR!=='combined'){s.style.display='none';return;}
+  const accts=curAccts().filter(a=>a.sales>0&&(a.monthsAbove||0)>=CHRONIC_MONTHS).sort((a,b)=>b.sales-a.sales);
+  if(!accts.length){s.style.display='none';return;}
+  s.style.display='block';
+  const b=bench();
+  document.getElementById('chronic-tag').textContent=`${accts.length} accounts · ${CHRONIC_MONTHS}+ of ${MONTHS.length} months above benchmark`;
+  document.getElementById('chronic-grid').innerHTML=accts.slice(0,8).map(a=>{
+    const pct=Math.round((a.monthsAbove||0)/a.monthCount*100);
+    return `<div class="chronic-card" onclick="openAcctModal('${a.alpha}')">
+      <div class="cc-alpha">${a.alpha}</div><div class="cc-name" title="${a.dealer}">${a.dealer.slice(0,22)}</div>
+      <div class="cc-stats">
+        <div><div class="cc-stat-l">Sales</div><div class="cc-stat-v" style="color:var(--ac2)">${f$(a.sales)}</div></div>
+        <div><div class="cc-stat-l">Wtd QI</div><div class="cc-stat-v" style="color:var(--bad)">${fqi(a.qi)}</div></div>
+        <div><div class="cc-stat-l">Months ↑</div><div class="cc-stat-v">${a.monthsAbove}/${a.monthCount}</div></div>
+        <div><div class="cc-stat-l">Rep</div><div class="cc-stat-v" style="font-size:.56rem;color:var(--tm)">${a.salesman.split(' ')[0]}</div></div>
+      </div>
+      <div class="freq-bar"><div class="freq-fill" style="width:${pct}%"></div></div>
+    </div>`;
+  }).join('');
+}
+
+// ── NEW + DORMANT ALERTS ──────────────────
+function renderAlerts(){
+  const ar=document.getElementById('alert-row');
+  // Only show for single months (not combined), only if prev month exists
+  const prevM=MONTHS[MONTHS.indexOf(CUR)-1];
+  if(CUR==='combined'||!prevM){ar.style.display='none';return;}
+  const curSet=new Set(DATA[CUR].accounts.filter(a=>a.sales>0).map(a=>a.alpha));
+  const prevSet=new Set(DATA[prevM].accounts.filter(a=>a.sales>0).map(a=>a.alpha));
+  const newAccts=DATA[CUR].accounts.filter(a=>a.sales>0&&!prevSet.has(a.alpha)).sort((a,b)=>b.sales-a.sales);
+  const dormAccts=DATA[prevM].accounts.filter(a=>a.sales>=10000&&!curSet.has(a.alpha)).sort((a,b)=>b.sales-a.sales);
+  if(!newAccts.length&&!dormAccts.length){ar.style.display='none';return;}
+  ar.style.display='grid';
+  document.getElementById('new-tag').textContent=newAccts.length+' accounts';
+  document.getElementById('dorm-tag').textContent=dormAccts.length+' accounts (≥$10K prior)';
+  document.getElementById('new-list').innerHTML=newAccts.slice(0,6).map(a=>`
+    <div class="alert-item" style="cursor:pointer" onclick="openAcctModal('${a.alpha}')">
+      <span class="alert-alpha">${a.alpha}</span>
+      <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${a.dealer.slice(0,22)}</span>
+      <span class="alert-meta">${f$(a.sales)} · QI ${fqi(a.qi)}</span>
+    </div>`).join('');
+  document.getElementById('dorm-list').innerHTML=dormAccts.slice(0,6).map(a=>`
+    <div class="alert-item" style="cursor:pointer" onclick="openAcctModal('${a.alpha}')">
+      <span class="alert-alpha">${a.alpha}</span>
+      <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${a.dealer.slice(0,22)}</span>
+      <span class="alert-meta" style="color:var(--cr)">prior ${f$(a.sales)}</span>
+    </div>`).join('');
+}
+
+// ── DISTRIBUTION ─────────────────────────
+function renderDist(){
+  const accts=curAccts().filter(a=>a.sales>0),b=bench(),isComb=CUR==='combined';
+  document.getElementById('bench-txt').innerHTML=`Benchmark: <strong>${b.toFixed(2)} replacements per $100K</strong>${isComb?' (7-month weighted)':''}`;
+  document.getElementById('wl-bench-txt').innerHTML=`Watch list: QI > <strong>${b.toFixed(2)}</strong>`;
+  const nb=document.getElementById('noise-banner');
+  if(isComb){nb.classList.add('vis');const tot=Object.values(SI).filter(a=>Object.values(a.months).some(m=>m.sales>0)).length;document.getElementById('noise-txt').textContent=`Combined noise filter: ${accts.length} of ${tot} accounts shown (≥${COMB_MIN_MONTHS}/${MONTHS.length} months · ≥$${COMB_MIN_SALES/1000}K combined)`;}
+  else{nb.classList.remove('vis');}
+  destroyC('ch-buckets');destroyC('ch-bench');destroyC('ch-state');
+  const le5=accts.filter(a=>a.qi<=5).length,ltB=accts.filter(a=>a.qi>5&&a.qi<=b).length,
+    gtB=accts.filter(a=>a.qi>b&&a.qi<=25).length,crit=accts.filter(a=>a.qi>25).length;
+  CHARTS['ch-buckets']=new Chart(document.getElementById('ch-buckets'),{type:'doughnut',
+    data:{labels:[`≤5 Excellent (${le5})`,`5–${b.toFixed(1)} Good (${ltB})`,`>${b.toFixed(1)} Worse (${gtB})`,`>25 Critical (${crit})`],
+      datasets:[{data:[le5,ltB,gtB,crit],backgroundColor:['#4df5a5','#e8ff47','#ffd147','#ff5555'],borderColor:'#0d0f14',borderWidth:3,hoverOffset:4}]},
+    options:{responsive:true,maintainAspectRatio:false,cutout:'65%',plugins:{legend:{position:'bottom',labels:{padding:6,boxWidth:7,font:{size:9}}}}}});
+  CHARTS['ch-bench']=new Chart(document.getElementById('ch-bench'),{type:'bar',
+    data:{labels:['Much Better','Better','Worse'],datasets:[{data:[accts.filter(a=>a.qivb>0.5).length,accts.filter(a=>a.qivb>0&&a.qivb<=0.5).length,accts.filter(a=>a.qivb<=0).length],backgroundColor:['#4df5a5','#e8ff47','#ff5555'],borderRadius:3,borderWidth:0}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false}},y:{grid:{color:'#1c2030'}}}}});
+  const stmap={};accts.forEach(a=>{if(!stmap[a.state])stmap[a.state]={s:0};stmap[a.state].s+=a.sales;});
+  const sts=Object.entries(stmap).map(([k,v])=>({k,s:v.s})).sort((a,b2)=>b2.s-a.s).slice(0,12);
+  CHARTS['ch-state']=new Chart(document.getElementById('ch-state'),{type:'bar',
+    data:{labels:sts.map(s=>s.k),datasets:[{data:sts.map(s=>s.s),backgroundColor:sts.map((_,i)=>`hsl(${200+i*13},65%,${55-i*1.5}%)`),borderRadius:2,borderWidth:0}]},
+    options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>` ${f$(c.parsed.x)}`}}},scales:{x:{grid:{color:'#1c2030'},ticks:{callback:v=>f$(v)}},y:{grid:{display:false}}}}});
+}
+
+// ── REPS ─────────────────────────────────
+function repRollup(){
+  const map={};
+  curAccts().filter(a=>a.sales>0).forEach(a=>{
+    if(!map[a.salesman])map[a.salesman]={salesman:a.salesman,sales:0,repl:0,n:0,accts:[]};
+    map[a.salesman].sales+=a.sales;map[a.salesman].repl+=a.repl;map[a.salesman].n++;map[a.salesman].accts.push(a);
+  });
+  return Object.values(map).map(r=>({...r,wtdQI:r.sales>0?r.repl/r.sales*100000:0})).sort((a,b)=>b.sales-a.sales);
+}
+function renderReps(){
+  const reps=repRollup(),b=bench(),mx=Math.max(...reps.map(r=>r.sales));
+  document.getElementById('sbars').innerHTML=reps.map(r=>{
+    const pct=(r.sales/mx*100).toFixed(1);
+    const qc=r.wtdQI<=5?'var(--gd)':r.wtdQI<=b?'var(--ac)':r.wtdQI<=25?'var(--wn)':'var(--bad)';
+    return `<div class="sbar-row" onclick="showPage('sc',document.querySelector('.ntab:nth-child(4)'))">
+      <div class="sbar-name">${r.salesman}</div>
+      <div class="sbar-track"><div class="sbar-fill" style="width:0%" data-w="${pct}%"></div></div>
+      <div class="sbar-meta">${f$(r.sales)}<br><span style="color:var(--td)">${r.n} accts</span><br><span style="color:${qc};font-size:.57rem">wtd QI ${r.wtdQI.toFixed(1)}</span></div>
+    </div>`;
+  }).join('');
+  setTimeout(()=>document.querySelectorAll('.sbar-fill').forEach(el=>el.style.width=el.dataset.w),80);
+  const sorted=[...reps].sort((a,b2)=>a.wtdQI-b2.wtdQI);
+  document.getElementById('qi-rank-body').innerHTML=sorted.map((r,i)=>`
+    <tr class="rep-main" onclick="toggleRD(${i})"><td style="font-weight:600">${r.salesman}</td><td class="nr">${r.n}</td><td class="nr">${f$(r.sales)}</td>
+      <td class="nr"><span class="qp ${qcls(r.wtdQI,b)}">${r.wtdQI.toFixed(2)}</span></td></tr>
+    <tbody class="rep-detail" id="rd-${i}"><tr><td colspan="4"><div class="rep-detail-inner">
+      <div style="font-family:'DM Mono';font-size:.55rem;color:var(--tm);letter-spacing:.1em">WORST 5 BY QI</div>
+      <div class="worst-grid">${[...r.accts].filter(a=>a.sales>0).sort((a,b2)=>b2.qi-a.qi).slice(0,5).map(a=>`
+        <div class="worst-card" style="cursor:pointer" onclick="event.stopPropagation();openAcctModal('${a.alpha}')">
+          <div class="wc-label">${a.alpha}</div><div class="wc-name">${a.dealer.slice(0,16)}</div>
+          <div class="wc-val ${qcls(a.qi,b)}">${fqi(a.qi)}</div>
+          <div class="wc-label" style="margin-top:2px">${f$(a.sales)}</div>
+        </div>`).join('')}
+      </div></div></td></tr></tbody>`).join('');
+}
+function toggleRD(i){document.getElementById('rd-'+i)?.classList.toggle('open');}
+function doFlip(){flipped=!flipped;document.getElementById('flip-inner').classList.toggle('flipped',flipped);document.getElementById('flip-btn').textContent=flipped?'↺ Sales View':'↺ Quality View';}
+
+// ── STATE ────────────────────────────────
+function renderState(){
+  const b=bench(),map={};
+  curAccts().filter(a=>a.sales>0).forEach(a=>{if(!map[a.state])map[a.state]={s:0,r:0,n:0};map[a.state].s+=a.sales;map[a.state].r+=a.repl;map[a.state].n++;});
+  document.getElementById('state-body').innerHTML=Object.entries(map).map(([k,v])=>({k,s:v.s,r:v.r,n:v.n,qi:v.s>0?v.r/v.s*100000:0}))
+    .sort((a,b2)=>b2.s-a.s).map(s=>`<tr><td><strong>${s.k}</strong></td><td class="nr">${s.n}</td>
+      <td class="nr" style="color:var(--ac2)">${f$(s.s)}</td><td class="nr"><span class="qp ${qcls(s.qi,b)}">${s.qi.toFixed(2)}</span></td></tr>`).join('');
+}
+
+// ── SCORECARDS ───────────────────────────
+function renderScorecards(){
+  const repMap={};
+  MONTHS.forEach(m=>{
+    const b=DATA[m].benchmark;
+    DATA[m].accounts.filter(a=>a.sales>0).forEach(a=>{
+      const rep=a.salesman;
+      if(!repMap[rep])repMap[rep]={name:rep,months:{},totalSales:0,totalRepl:0};
+      if(!repMap[rep].months[m])repMap[rep].months[m]={sales:0,repl:0,n:0,above:0,bench:b};
+      repMap[rep].months[m].sales+=a.sales;repMap[rep].months[m].repl+=a.repl;
+      repMap[rep].months[m].n++;
+      if(a.qi>b)repMap[rep].months[m].above++;
+      repMap[rep].totalSales+=a.sales;repMap[rep].totalRepl+=a.repl;
+    });
+  });
+  const reps=Object.values(repMap).filter(r=>r.totalSales>10000).sort((a,b)=>b.totalSales-a.totalSales);
+  document.getElementById('scorecard-grid').innerHTML=reps.map((rep,ri)=>{
+    const wtdQI=rep.totalSales>0?rep.totalRepl/rep.totalSales*100000:0;
+    const b=MONTHS.length>0?DATA[MONTHS[MONTHS.length-1]].benchmark:0;
+    const monthKeys=MONTHS.filter(m=>rep.months[m]);
+    const totalAbove=monthKeys.reduce((s,m)=>s+rep.months[m].above,0);
+    const totalAccts=monthKeys.reduce((s,m)=>s+rep.months[m].n,0);
+    const qiTrend=monthKeys.map(m=>{const mv=rep.months[m];return mv.sales>0?mv.repl/mv.sales*100000:null;}).filter(v=>v!==null);
+    const latestQI=qiTrend[qiTrend.length-1]||0;
+    const priorQI=qiTrend[qiTrend.length-2]||0;
+    const trendDir=qiTrend.length>1?(latestQI<priorQI?'▼':'▲'):' ';
+    const trendColor=latestQI<priorQI?'var(--gd)':'var(--bad)';
+    return `<div class="sc-card" id="sc-${ri}">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:3px">
+        <div class="sc-name">${rep.name}</div>
+        <span class="qp ${qcls(wtdQI,b)}" style="font-size:.6rem">${wtdQI.toFixed(2)}</span>
+      </div>
+      <div class="sc-meta">${monthKeys.length}/${MONTHS.length} months · ${Math.round(totalAccts/monthKeys.length)} avg accts/month</div>
+      <div class="sc-stats">
+        <div class="sc-stat"><div class="sc-stat-l">7-MO SALES</div><div class="sc-stat-v" style="color:var(--ac2);font-size:1rem">${f$(rep.totalSales)}</div></div>
+        <div class="sc-stat"><div class="sc-stat-l">WTD QI</div><div class="sc-stat-v" style="color:${qcls(wtdQI,b)==='qe'?'var(--gd)':qcls(wtdQI,b)==='qg'?'var(--ac)':qcls(wtdQI,b)==='qw'?'var(--wn)':'var(--bad)'}">${wtdQI.toFixed(2)}</div></div>
+        <div class="sc-stat"><div class="sc-stat-l">TREND</div><div class="sc-stat-v" style="color:${trendColor}">${trendDir} ${latestQI.toFixed(1)}</div></div>
+      </div>
+      <div class="sc-trend"><canvas id="sc-chart-${ri}"></canvas></div>
+      <button style="font-family:'DM Mono';font-size:.52rem;color:var(--ac2);background:none;border:none;cursor:pointer;padding:6px 0 0;letter-spacing:.08em" onclick="toggleScDetail(${ri})">▾ Account Detail</button>
+      <div class="sc-detail" id="sc-detail-${ri}">
+        ${MONTHS.filter(m=>rep.months[m]).flatMap(m=>DATA[m].accounts.filter(a=>a.salesman===rep.name&&a.sales>0))
+          .sort((a,b2)=>b2.sales-a.sales).slice(0,8).map(a=>`
+          <div class="sc-acct-row" style="cursor:pointer" onclick="openAcctModal('${a.alpha}')">
+            <span class="alpha" style="font-size:.58rem">${a.alpha}</span>
+            <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:.7rem">${a.dealer.slice(0,20)}</span>
+            <span style="font-family:'DM Mono';font-size:.62rem;color:var(--ac2)">${f$(a.sales)}</span>
+            <span class="qp ${qcls(a.qi,DATA[a.month].benchmark)}" style="font-size:.58rem">${fqi(a.qi)}</span>
+          </div>`).join('')}
+      </div>
+    </div>`;
+  }).join('');
+  // Draw mini trend charts
+  reps.forEach((rep,ri)=>{
+    const mkeys=MONTHS.filter(m=>rep.months[m]);
+    const qis=mkeys.map(m=>{const mv=rep.months[m];return mv.sales>0?mv.repl/mv.sales*100000:0;});
+    const benchmarks=mkeys.map(m=>DATA[m].benchmark);
+    const ctx=document.getElementById(`sc-chart-${ri}`);if(!ctx)return;
+    new Chart(ctx,{type:'line',
+      data:{labels:mkeys.map(fmtM),datasets:[
+        {data:qis,borderColor:'#47c8ff',borderWidth:2,pointRadius:3,pointBackgroundColor:'#47c8ff',tension:.35,fill:false},
+        {data:benchmarks,borderColor:'rgba(232,255,71,.4)',borderWidth:1,borderDash:[3,3],pointRadius:0,tension:.35,fill:false}
+      ]},
+      options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>` ${c.parsed.y.toFixed(1)}`}}},
+        scales:{x:{display:false},y:{display:false,min:0}}}});
+  });
+}
+function toggleScDetail(i){document.getElementById(`sc-detail-${i}`)?.classList.toggle('open');}
+
+// ── CUSTOMERS ────────────────────────────
+function populateRepFilters(){
+  const reps=[...new Set(Object.values(DATA).flatMap(d=>d.accounts.map(a=>a.salesman)))].sort();
+  const opts='<option value="">All</option>'+reps.map(r=>`<option value="${r}">${r}</option>`).join('');
+  document.getElementById('rep-fil-cust').innerHTML=opts;
+  document.getElementById('rep-fil-wl').innerHTML=opts;
+}
+function acctTier(a){
+  const b=bench();
+  if(CUR==='combined')return getTier(a.qi,b,a.monthsAbove||0,a.monthCount||MONTHS.length);
+  return a.qi<=5?'EXCELLENT':a.qi<=b?'OK':a.qi<=b*1.5?'WATCH':'CHRONIC';
+}
+function renderCust(){
+  const rep=document.getElementById('rep-fil-cust').value;
+  const tierFil=document.getElementById('tier-fil-cust').value;
+  const sort=document.getElementById('sort-cust').value;
+  const b=bench();
+  let accts=curAccts().filter(a=>a.sales>0);
+  if(rep)accts=accts.filter(a=>a.salesman===rep);
+  if(tierFil)accts=accts.filter(a=>acctTier(a)===tierFil);
+  if(sort==='qi-worst')accts.sort((a,b2)=>b2.qi-a.qi);
+  else if(sort==='qi-best')accts.sort((a,b2)=>a.qi-b2.qi);
+  else accts.sort((a,b2)=>b2.sales-a.sales);
+  document.getElementById('cust-count').textContent=`${accts.length} accounts`;
+  document.getElementById('cust-body').innerHTML=accts.slice(0,60).map((a,i)=>{
+    const vsB=(a.qi-b)/b*100,t=acctTier(a);
+    return `<tr class="clickable" onclick="openAcctModal('${a.alpha}')">
+      <td><span class="rank${i<3?' top':''}">${i+1}</span></td>
+      <td><span class="alpha">${a.alpha}</span></td>
+      <td><div class="dn" title="${a.dealer}">${a.dealer}</div></td>
+      <td>${spill(a.status)}</td><td style="font-size:.68rem;color:var(--tm)">${a.salesman}</td>
+      <td style="font-family:'DM Mono';font-size:.7rem">${a.state}</td>
+      <td class="nr" style="color:var(--ac2)">${f$(a.sales)}</td><td class="nr">${a.repl}</td>
+      <td class="nr"><span class="qp ${qcls(a.qi,b)}">${fqi(a.qi)}</span></td>
+      <td class="nr"><span class="${vsB<0?'tv-up':vsB>0?'tv-dn':'tv-fl'}">${vsB<0?'▼ '+Math.abs(vsB).toFixed(1)+'%':vsB>0?'▲ '+vsB.toFixed(1)+'%':'—'}</span></td>
+      <td>${tierBadge(t)}</td></tr>`;
+  }).join('');
+}
+
+// ── WATCHLIST ────────────────────────────
+function renderWL(){
+  const rep=document.getElementById('rep-fil-wl').value;
+  const b=bench();
+  let accts=curAccts().filter(a=>a.sales>0&&a.qi>b);
+  if(rep)accts=accts.filter(a=>a.salesman===rep);
+  accts.sort((a,b2)=>b2.qi-a.qi);
+  document.getElementById('wl-count').textContent=`${accts.length} accounts above benchmark`;
+  document.getElementById('wl-body').innerHTML=accts.map(a=>{
+    const over=(a.qi-b)/b*100,t=acctTier(a);
+    return `<tr class="clickable" onclick="openAcctModal('${a.alpha}')">
+      <td><span class="alpha">${a.alpha}</span></td><td><div class="dn" title="${a.dealer}">${a.dealer}</div></td>
+      <td>${spill(a.status)}</td><td style="font-size:.68rem;color:var(--tm)">${a.salesman}</td>
+      <td style="font-family:'DM Mono';font-size:.7rem">${a.state}</td>
+      <td class="nr" style="color:var(--ac2)">${f$(a.sales)}</td>
+      <td class="nr"><span class="qp qb">${fqi(a.qi)}</span></td>
+      <td class="nr"><span class="tv-dn">+${over.toFixed(1)}%</span></td>
+      <td>${tierBadge(t)}</td></tr>`;
+  }).join('');
+}
+
+// ── TRENDS ───────────────────────────────
+function renderTrends(){
+  if(MONTHS.length<2){document.getElementById('trend-range-tag').textContent='Need 2+ months';return;}
+  const m1=MONTHS[MONTHS.length-2],m2=MONTHS[MONTHS.length-1];
+  document.getElementById('trend-range-tag').textContent=fmtM(MONTHS[0])+' → '+fmtM(MONTHS[MONTHS.length-1]);
+  document.getElementById('imp-tag').textContent=`≥$${TREND_MIN_SALES/1000}K · was above benchmark · QI drop >${Math.abs(TREND_MIN_IMP)}`;
+  document.getElementById('wor-tag').textContent=`≥$${TREND_MIN_SALES/1000}K · now above benchmark · QI rise >${TREND_MIN_WOR}`;
+  destroyC('ch-sales-trend');destroyC('ch-qi-trend');
+  CHARTS['ch-sales-trend']=new Chart(document.getElementById('ch-sales-trend'),{type:'bar',
+    data:{labels:MONTHS.map(fmtM),datasets:[{data:MONTHS.map(m=>DATA[m].companySales),backgroundColor:MONTHS.map((_,i)=>`rgba(71,200,255,${0.22+i*0.1})`),borderColor:'#47c8ff',borderWidth:2,borderRadius:4}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>` ${f$(c.parsed.y)}`}}},scales:{x:{grid:{display:false}},y:{grid:{color:'#1c2030'},ticks:{callback:v=>f$(v)}}}}});
+  CHARTS['ch-qi-trend']=new Chart(document.getElementById('ch-qi-trend'),{type:'line',
+    data:{labels:MONTHS.map(fmtM),datasets:[{data:MONTHS.map(m=>DATA[m].benchmark),borderColor:'#ffd147',backgroundColor:'rgba(255,209,71,.08)',borderWidth:2,pointRadius:5,pointBackgroundColor:'#ffd147',tension:.3,fill:true}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false}},y:{grid:{color:'#1c2030'},min:0}}}});
+  const d1={},d2={},b1=DATA[m1].benchmark,b2=DATA[m2].benchmark;
+  DATA[m1].accounts.filter(a=>a.sales>0).forEach(a=>d1[a.alpha]=a);
+  DATA[m2].accounts.filter(a=>a.sales>0).forEach(a=>d2[a.alpha]=a);
+  const fq=v=>v>9999?'>9999':v.toFixed(1);
+  // Improved: had sales in both months, was above benchmark before, meaningful drop, ≥$25K
+  const improved=Object.keys(d1).filter(k=>d2[k])
+    .map(k=>({...d2[k],qi1:d1[k].qi,qi2:d2[k].qi,chg:d2[k].qi-d1[k].qi}))
+    .filter(c=>c.chg<TREND_MIN_IMP&&c.sales>=TREND_MIN_SALES&&c.qi1>b1)
+    .sort((a,b)=>a.chg-b.chg);
+  // Worsened: meaningful rise, now above benchmark, ≥$25K
+  const worsened=Object.keys(d1).filter(k=>d2[k])
+    .map(k=>({...d2[k],qi1:d1[k].qi,qi2:d2[k].qi,chg:d2[k].qi-d1[k].qi}))
+    .filter(c=>c.chg>TREND_MIN_WOR&&c.sales>=TREND_MIN_SALES&&c.qi2>b2)
+    .sort((a,b)=>b.chg-a.chg);
+  document.getElementById('improved-body').innerHTML=improved.slice(0,12).map(c=>`
+    <tr class="clickable" onclick="openAcctModal('${c.alpha}')">
+      <td><span class="alpha">${c.alpha}</span></td><td><div class="dn">${c.dealer}</div></td>
+      <td style="font-family:'DM Mono';font-size:.7rem">${c.state}</td>
+      <td class="nr"><span class="tv-dn">${fq(c.qi1)}</span></td>
+      <td class="nr"><span class="qp ${qcls(c.qi2,b2)}">${fq(c.qi2)}</span></td>
+      <td class="nr"><span class="tv-up">▼ ${fq(Math.abs(c.chg))}</span></td>
+      <td class="nr" style="color:var(--ac2)">${f$(c.sales)}</td></tr>`).join('');
+  document.getElementById('worsened-body').innerHTML=worsened.slice(0,12).map(c=>`
+    <tr class="clickable" onclick="openAcctModal('${c.alpha}')">
+      <td><span class="alpha">${c.alpha}</span></td><td><div class="dn">${c.dealer}</div></td>
+      <td style="font-family:'DM Mono';font-size:.7rem">${c.state}</td>
+      <td class="nr"><span class="tv-up">${fq(c.qi1)}</span></td>
+      <td class="nr"><span class="qp qb">${fq(c.qi2)}</span></td>
+      <td class="nr"><span class="tv-dn">▲ ${fq(c.chg)}</span></td>
+      <td class="nr" style="color:var(--ac2)">${f$(c.sales)}</td></tr>`).join('');
+}
+
+// ── ACCOUNT DRILL-DOWN MODAL ─────────────
+function openAcctModal(alpha){
+  const a=SI[alpha];if(!a)return;
+  const mkeys=MONTHS.filter(m=>a.months[m]);
+  const transKeys=mkeys.filter(m=>a.months[m].sales>0);
+  const totalSales=transKeys.reduce((s,m)=>s+a.months[m].sales,0);
+  const totalRepl=transKeys.reduce((s,m)=>s+a.months[m].repl,0);
+  const wtdQI=totalSales>0?totalRepl/totalSales*100000:0;
+  const latestM=transKeys[transKeys.length-1];
+  const latestB=latestM?a.months[latestM].bench:0;
+  const monthsAbove=transKeys.filter(m=>a.months[m].qi>a.months[m].bench).length;
+  const tier=getTier(wtdQI,latestB,monthsAbove,transKeys.length);
+
+  document.getElementById('am-title').textContent=a.dealer;
+  document.getElementById('am-sub').textContent=`${alpha} · ${a.salesman} · ${a.state} · ${a.status} · ${tierBadge(tier).replace(/<[^>]+>/g,'')} tier`;
+  document.getElementById('am-krow').innerHTML=`
+    <div class="modal-kc"><div class="modal-kl">Total Sales</div><div class="modal-kv" style="color:var(--ac2)">${f$(totalSales)}</div></div>
+    <div class="modal-kc"><div class="modal-kl">Wtd QI</div><div class="modal-kv" style="color:${wtdQI<=5?'var(--gd)':wtdQI<=latestB?'var(--ac)':wtdQI<=25?'var(--wn)':'var(--bad)'}">${fqi(wtdQI)}</div></div>
+    <div class="modal-kc"><div class="modal-kl">Months Active</div><div class="modal-kv">${transKeys.length}/${MONTHS.length}</div></div>
+    <div class="modal-kc"><div class="modal-kl">Months Above Bench</div><div class="modal-kv" style="color:${monthsAbove>=4?'var(--bad)':monthsAbove>=2?'var(--wn)':'var(--gd)'}">${monthsAbove}/${transKeys.length}</div></div>`;
+  document.getElementById('am-months').innerHTML=transKeys.map(m=>`
+    <div class="modal-m">
+      <div class="modal-m-l">${fmtM(m)}</div>
+      <div class="modal-m-v">${f$(a.months[m].sales)}</div>
+      <div class="modal-m-l" style="margin-top:3px">QI · bench ${a.months[m].bench.toFixed(1)}</div>
+      <span class="qp ${qcls(a.months[m].qi,a.months[m].bench)}" style="font-size:.62rem">${a.months[m].qi.toFixed(2)}</span>
+    </div>`).join('');
+  // QI trend chart
+  if(acctModalChart){acctModalChart.destroy();acctModalChart=null;}
+  const ctx=document.getElementById('am-chart');
+  acctModalChart=new Chart(ctx,{type:'line',
+    data:{labels:transKeys.map(fmtM),datasets:[
+      {label:'Account QI',data:transKeys.map(m=>a.months[m].qi),borderColor:'#47c8ff',backgroundColor:'rgba(71,200,255,.08)',borderWidth:2,pointRadius:5,pointBackgroundColor:'#47c8ff',tension:.35,fill:true},
+      {label:'Benchmark',data:transKeys.map(m=>a.months[m].bench),borderColor:'rgba(232,255,71,.5)',borderWidth:1,borderDash:[4,4],pointRadius:0,tension:.35,fill:false}
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{padding:12,boxWidth:10}}},
+      scales:{x:{grid:{display:false}},y:{grid:{color:'#1c2030'},min:0,ticks:{callback:v=>v.toFixed(1)}}}}});
+  document.getElementById('am-ai-text').className='ai-text ai-loading';
+  document.getElementById('am-ai-text').textContent='⟳ Generating…';
+  document.getElementById('acct-modal').classList.add('open');
+  generateAcctNarrative(a,transKeys,totalSales,wtdQI,monthsAbove,latestB);
+}
+function closeAcctModal(){document.getElementById('acct-modal').classList.remove('open');}
+document.getElementById('acct-modal').addEventListener('click',e=>{if(e.target===e.currentTarget)closeAcctModal();});
+
+async function generateAcctNarrative(a,transKeys,totalSales,wtdQI,monthsAbove,latestB){
+  const el=document.getElementById('am-ai-text');
+  const monthSummary=transKeys.map(m=>`${fmtM(m)}: Sales ${f$(a.months[m].sales)}, QI ${a.months[m].qi.toFixed(2)} (benchmark ${a.months[m].bench.toFixed(2)})`).join('; ');
+  const latestM=transKeys[transKeys.length-1],prevM=transKeys[transKeys.length-2];
+  const prompt=`You are a quality analyst for a cabinet distributor. Write a concise 3-sentence account narrative for a sales manager.
+
+Account: ${a.dealer} (${a.alpha})
+Salesman: ${a.salesman} | State: ${a.state} | Status: ${a.status}
+Active: ${transKeys.length} of ${MONTHS.length} months (${transKeys.map(m=>fmtM(m)).join(', ')})
+Monthly data: ${monthSummary}
+7-month total sales: ${f$(totalSales)} | Weighted QI: ${wtdQI.toFixed(2)} | Current benchmark: ${latestB.toFixed(2)}
+Months above benchmark: ${monthsAbove} of ${transKeys.length}
+${latestM&&prevM?`Recent trend: QI moved from ${a.months[prevM].qi.toFixed(2)} (${fmtM(prevM)}) to ${a.months[latestM].qi.toFixed(2)} (${fmtM(latestM)})`:''}
+
+Write exactly 3 sentences. Sentence 1: sales volume and purchase consistency. Sentence 2: quality performance vs benchmark — be specific about whether they are consistently above, improving, or a chronic problem. Sentence 3: one clear, actionable recommendation or concern for the sales manager. No bullets, no headers, plain prose.`;
+  try{
+    const resp=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:220,messages:[{role:'user',content:prompt}]})});
+    const data=await resp.json();
+    el.className='ai-text';el.textContent=data.content?.[0]?.text||'Narrative unavailable.';
+  }catch(e){
+    el.className='ai-text';el.style.color='var(--tm)';
+    el.textContent='AI narrative requires hosted environment (GitHub Pages or Netlify).';
+  }
+}
+
+// ── SEARCH ───────────────────────────────
+function doSearch(q){
+  const res=document.getElementById('search-results');
+  if(!q||q.length<2){res.innerHTML='<div class="search-empty"><span style="font-size:1.4rem">🔍</span><span>Type to search across all months</span></div>';return;}
+  const ql=q.toLowerCase();
+  const hits=Object.values(SI).filter(a=>
+    a.alpha.toLowerCase().includes(ql)||a.dealer.toLowerCase().includes(ql)||
+    a.salesman.toLowerCase().includes(ql)||(a.state&&a.state.toLowerCase().includes(ql))
+  ).filter(a=>Object.values(a.months).some(m=>m.sales>0)).slice(0,10);
+  if(!hits.length){res.innerHTML=`<div class="search-empty"><span>∅</span><span>No accounts found for "${q}"</span></div>`;return;}
+  res.innerHTML=hits.map(a=>{
+    const mkeys=MONTHS.filter(m=>a.months[m]&&a.months[m].sales>0);
+    const lm=mkeys[mkeys.length-1],pm=mkeys[mkeys.length-2];
+    const lqi=lm?a.months[lm].qi:0,pqi=pm?a.months[pm].qi:0;
+    const trend=pm&&lm?(lqi<pqi?'<span class="tv-up">▼ Improving</span>':lqi>pqi?'<span class="tv-dn">▲ Worsening</span>':'<span class="tv-fl">— Stable</span>'):'';
+    return `<div class="acard">
+      <div class="acard-h">
+        <span class="alpha">${a.alpha}</span><span class="acard-name">${a.dealer}</span>
+        ${spill(a.status)}<span style="font-size:.68rem;color:var(--tm);margin-left:auto">${a.salesman} · ${a.state}</span>
+        <button class="export-btn" onclick="openAcctModal('${a.alpha}')">Full Detail ↗</button>
+      </div>
+      <div class="acard-months">${mkeys.map(m=>`
+        <div class="am"><div class="am-l">${fmtM(m)}</div><div class="am-v">${f$(a.months[m].sales)}</div>
+        <div class="am-l" style="margin-top:2px">QI</div>
+        <span class="qp ${qcls(a.months[m].qi,a.months[m].bench)}" style="font-size:.62rem">${a.months[m].qi.toFixed(2)}</span>
+        </div>`).join('')}
+      </div>
+      ${trend?`<div style="font-family:'DM Mono';font-size:.63rem;color:var(--tm)">Trend: ${trend}</div>`:''}
+    </div>`;
+  }).join('');
+}
+
+// ── KPI MODAL ────────────────────────────
+function openKpiModal(k){
+  if(MONTHS.length<2)return;
+  const defs={
+    sales:{t:'Company Monthly Sales',fmt:f$,data:()=>MONTHS.map(m=>DATA[m].companySales),c:'#47c8ff'},
+    qi:{t:'QI Benchmark Trend',fmt:v=>v.toFixed(2),data:()=>MONTHS.map(m=>DATA[m].benchmark),c:'#ffd147'},
+    accts:{t:'Qualified Account Count',fmt:String,data:()=>MONTHS.map(m=>DATA[m].accounts.length),c:'#e8ff47'},
+    trans:{t:'Transacting Accounts',fmt:String,data:()=>MONTHS.map(m=>DATA[m].transacting),c:'#4df5a5'},
+    exc:{t:'Excellent QI (≤5)',fmt:String,data:()=>MONTHS.map(m=>DATA[m].accounts.filter(a=>a.sales>0&&a.qi<=5).length),c:'#4df5a5'},
+  };
+  const d=defs[k];if(!d)return;
+  document.getElementById('km-title').textContent=d.t;
+  document.getElementById('km-sub').textContent=MONTHS.map(fmtM).join(' → ');
+  document.getElementById('kpi-modal').classList.add('open');
+  if(kpiModalChart){kpiModalChart.destroy();kpiModalChart=null;}
+  kpiModalChart=new Chart(document.getElementById('km-chart'),{type:'bar',
+    data:{labels:MONTHS.map(fmtM),datasets:[{data:d.data(),backgroundColor:d.c+'55',borderColor:d.c,borderWidth:2,borderRadius:4}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>` ${d.fmt(c.parsed.y)}`}}},
+      scales:{x:{grid:{display:false}},y:{grid:{color:'#1c2030'},ticks:{callback:v=>d.fmt(v)}}}}});
+}
+document.getElementById('kpi-modal').addEventListener('click',e=>{if(e.target===e.currentTarget){document.getElementById('kpi-modal').classList.remove('open');}});
+
+// ── EXPORT SUMMARY ───────────────────────
+function exportSummary(){
+  const b=bench(),sales=curSales(),accts=curAccts().filter(a=>a.sales>0);
+  const period=CUR==='combined'?MONTHS.map(fmtM).join(' + '):fmtM(CUR);
+  const top5=accts.sort((a,b2)=>b2.sales-a.sales).slice(0,5);
+  const wl=accts.filter(a=>a.qi>b).sort((a,b2)=>b2.qi-a.qi).slice(0,5);
+  const w=window.open('','_blank');
+  w.document.write(`<!DOCTYPE html><html><head><title>QI Summary ${period}</title>
+  <style>body{font-family:Arial,sans-serif;padding:36px;color:#1a1a2e;max-width:900px;margin:0 auto;}
+  h1{font-size:22px;border-bottom:3px solid #e8ff47;padding-bottom:8px;margin-bottom:4px;}
+  h2{font-size:14px;color:#555;margin:0 0 20px;}
+  h3{font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;margin:22px 0 8px;color:#333;}
+  .krow{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:16px 0;}
+  .kc{border:1px solid #e0e0e0;border-radius:4px;padding:12px 14px;background:#fafafa;}
+  .kl{font-size:9px;text-transform:uppercase;letter-spacing:.12em;color:#888;margin-bottom:3px;}
+  .kv{font-size:22px;font-weight:700;}
+  table{width:100%;border-collapse:collapse;font-size:12px;margin-bottom:16px;}
+  th{background:#f5f5f5;padding:7px 10px;text-align:left;border-bottom:2px solid #e0e0e0;font-size:10px;text-transform:uppercase;letter-spacing:.1em;}
+  td{padding:6px 10px;border-bottom:1px solid #eee;}
+  .foot{font-size:10px;color:#aaa;margin-top:24px;border-top:1px solid #eee;padding-top:12px;}
+  @media print{button{display:none}}</style></head><body>
+  <h1>Quality Index Dashboard — Executive Summary</h1>
+  <h2>${period} · Generated ${new Date().toLocaleDateString()}</h2>
+  <div class="krow">
+    <div class="kc"><div class="kl">Company Sales</div><div class="kv">${f$(sales)}</div></div>
+    <div class="kc"><div class="kl">QI Benchmark</div><div class="kv">${b.toFixed(2)}</div></div>
+    <div class="kc"><div class="kl">Transacting</div><div class="kv">${accts.length}</div></div>
+    <div class="kc"><div class="kl">Excellent QI ≤5</div><div class="kv">${accts.filter(a=>a.qi<=5).length}</div></div>
+  </div>
+  <h3>Top 5 Accounts by Sales</h3>
+  <table><tr><th>Alpha</th><th>Dealer</th><th>Salesman</th><th>State</th><th>Sales</th><th>QI</th></tr>
+  ${top5.map(a=>`<tr><td>${a.alpha}</td><td>${a.dealer}</td><td>${a.salesman}</td><td>${a.state}</td><td>${f$(a.sales)}</td><td>${fqi(a.qi)}</td></tr>`).join('')}
+  </table>
+  <h3>Top 5 Watch List (Worst QI above benchmark)</h3>
+  <table><tr><th>Alpha</th><th>Dealer</th><th>Salesman</th><th>State</th><th>Sales</th><th>QI</th><th>Over Bench</th></tr>
+  ${wl.map(a=>`<tr><td>${a.alpha}</td><td>${a.dealer}</td><td>${a.salesman}</td><td>${a.state}</td><td>${f$(a.sales)}</td><td>${fqi(a.qi)}</td><td>+${((a.qi-b)/b*100).toFixed(1)}%</td></tr>`).join('')}
+  </table>
+  <div class="foot">Quality Index Dashboard · QI = Replacements per $100K · Lower is better · -Z accounts rolled up · Active + Cr Hold only</div>
+  <br><button onclick="window.print()">🖨 Print / Save as PDF</button>
+  </body></html>`);
+  w.document.close();
+}
+
+// ── UTILS ────────────────────────────────
+function showPage(id,btn){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('act'));
+  document.querySelectorAll('.ntab').forEach(b=>b.classList.remove('act'));
+  document.getElementById('page-'+id).classList.add('act');
+  if(btn)btn.classList.add('act');
+  if(id==='tr')renderTrends();
+}
+function destroyC(id){if(CHARTS[id]){CHARTS[id].destroy();delete CHARTS[id];}}
+
+loadDashboard();
+</script>
+</body>
+</html>
