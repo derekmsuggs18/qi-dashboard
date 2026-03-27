@@ -522,6 +522,7 @@ body{background:var(--bg);color:var(--tx);font-family:'DM Sans',sans-serif;min-h
     <div class="badges">
       <div class="badge badge-g">✓ -Z Rolled Up</div>
       <div class="badge badge-g">✓ Active + Cr Hold</div>
+      <div class="badge badge-g" style="border-color:rgba(255,159,71,.35);color:var(--cr);background:rgba(255,159,71,.07)">◈ CQI Primary</div>
       <div class="badge badge-b" id="months-badge">—</div>
       <div class="badge badge-b">● LIVE</div>
       <button class="export-btn" onclick="exportSummary()">⬇ Export Summary</button>
@@ -587,8 +588,8 @@ body{background:var(--bg);color:var(--tx);font-family:'DM Sans',sans-serif;min-h
       <div class="bench-bar"><div class="bench-dot"></div><span id="bench-txt">—</span></div>
       <div class="noise-banner" id="noise-banner"><span>⚡</span><span id="noise-txt">—</span></div>
       <div class="crow">
-        <div class="cc"><div class="ct">QI Buckets</div><div class="cw"><canvas id="ch-buckets"></canvas></div></div>
-        <div class="cc"><div class="ct">vs Benchmark</div><div class="cw"><canvas id="ch-bench"></canvas></div></div>
+        <div class="cc"><div class="ct">CQI Distribution</div><div class="cw"><canvas id="ch-buckets"></canvas></div></div>
+        <div class="cc"><div class="ct">vs CQI Benchmark</div><div class="cw"><canvas id="ch-bench"></canvas></div></div>
         <div class="cc"><div class="ct">Sales by State (Top 12)</div><div class="cw"><canvas id="ch-state"></canvas></div></div>
       </div>
 
@@ -599,7 +600,7 @@ body{background:var(--bg);color:var(--tx);font-family:'DM Sans',sans-serif;min-h
             <div class="flip-inner" id="flip-inner">
               <div class="flip-front tw"><div class="sbars" id="sbars"></div></div>
               <div class="flip-back tw"><div class="tscroll"><table class="dt">
-                <thead><tr><th>Rep</th><th class="nr">Accts</th><th class="nr">Sales</th><th class="nr" style="color:var(--ac2)">Wtd QI ↓ expand</th></tr></thead>
+                <thead><tr><th>Rep</th><th class="nr">Accts</th><th class="nr">Sales</th><th class="nr" style="color:var(--cr)">Wtd CQI ↓ expand</th></tr></thead>
                 <tbody id="qi-rank-body"></tbody>
               </table></div></div>
             </div>
@@ -608,7 +609,7 @@ body{background:var(--bg);color:var(--tx);font-family:'DM Sans',sans-serif;min-h
         <div>
           <div class="sh"><div class="sh-t">STATE BREAKDOWN</div><div class="sh-l"></div><div class="tog" id="tog-state"></div></div>
           <div class="tw"><div class="tscroll"><table class="dt">
-            <thead><tr><th>State</th><th class="nr">Accts</th><th class="nr">Sales</th><th class="nr">Wtd QI</th></tr></thead>
+            <thead><tr><th>State</th><th class="nr">Accts</th><th class="nr">Sales</th><th class="nr" style="color:var(--cr)">CQI</th><th class="nr hide-m">QI</th></tr></thead>
             <tbody id="state-body"></tbody>
           </table></div></div>
         </div>
@@ -682,20 +683,20 @@ body{background:var(--bg);color:var(--tx);font-family:'DM Sans',sans-serif;min-h
       <div class="sh"><div class="sh-t">TRENDS</div><div class="sh-l"></div><div class="sh-tag" id="trend-range-tag"></div></div>
       <div class="crow-2">
         <div class="cc"><div class="ct">Company Sales — Monthly</div><div class="cw-lg"><canvas id="ch-sales-trend"></canvas></div></div>
-        <div class="cc"><div class="ct">QI Benchmark — Monthly</div><div class="cw-lg"><canvas id="ch-qi-trend"></canvas></div></div>
+        <div class="cc"><div class="ct">CQI Benchmark — Monthly</div><div class="cw-lg"><canvas id="ch-qi-trend"></canvas></div></div>
       </div>
       <div class="trend-cols">
         <div>
           <div class="sh"><div class="sh-t">MOST IMPROVED</div><div class="sh-l"></div><div class="sh-tag" id="imp-tag"></div></div>
           <div class="tw"><div class="tscroll"><table class="dt">
-            <thead><tr><th>Alpha</th><th>Dealer</th><th>St</th><th class="nr">Prior QI</th><th class="nr">Latest QI</th><th class="nr">Δ</th><th class="nr">Sales</th></tr></thead>
+            <thead><tr><th>Alpha</th><th>Dealer</th><th>St</th><th class="nr">Prior CQI</th><th class="nr">Latest CQI</th><th class="nr">Δ</th><th class="nr">Sales</th></tr></thead>
             <tbody id="improved-body"></tbody>
           </table></div></div>
         </div>
         <div>
           <div class="sh"><div class="sh-t">NEEDS ATTENTION</div><div class="sh-l"></div><div class="sh-tag" id="wor-tag"></div></div>
           <div class="tw"><div class="tscroll"><table class="dt">
-            <thead><tr><th>Alpha</th><th>Dealer</th><th>St</th><th class="nr">Prior QI</th><th class="nr">Latest QI</th><th class="nr">Δ</th><th class="nr">Sales</th></tr></thead>
+            <thead><tr><th>Alpha</th><th>Dealer</th><th>St</th><th class="nr">Prior CQI</th><th class="nr">Latest CQI</th><th class="nr">Δ</th><th class="nr">Sales</th></tr></thead>
             <tbody id="worsened-body"></tbody>
           </table></div></div>
         </div>
@@ -739,7 +740,7 @@ const setLS=t=>document.getElementById('load-s').textContent=t;
 const bench=()=>CUR==='combined'?combBench():(DATA[CUR]?.benchmark||0);
 const combBench=()=>{let ts=0,tr=0;MONTHS.forEach(m=>DATA[m].accounts.forEach(a=>{ts+=a.sales;tr+=a.repl;}));return ts>0?tr/ts*100000:0;};
 const cqiBench=()=>CUR==='combined'?combCqiBench():(DATA[CUR]?.cqiBenchmark||0);
-const combCqiBench=()=>{let ts=0,tc=0;MONTHS.forEach(m=>DATA[m].accounts.forEach(a=>{ts+=a.sales;tc+=a.replCost;}));return ts>0?tc/ts*100000:0;};
+const combCqiBench=()=>{let ts=0,tc=0;MONTHS.forEach(m=>DATA[m].accounts.forEach(a=>{if(a.replCost!==null){ts+=a.sales;tc+=a.replCost;}}));return ts>0?tc/ts*100000:0;};
 const setBadge=(id,cur,prev,invert=false)=>{
   const el=document.getElementById(id);if(!el)return;
   if(prev===null||prev===undefined||prev===0){el.textContent='';el.className='kbadge';return;}
@@ -751,7 +752,21 @@ const getTier=(qi,b,freqAbove,totalMonths)=>{
   const r=totalMonths>0?freqAbove/totalMonths:0;
   if(r>=0.57)return'CHRONIC';if(r>=0.35)return'WATCH';return'OK';
 };
-const tierBadge=t=>{const m={EXCELLENT:'tier-excellent',OK:'tier-ok',WATCH:'tier-watch',CHRONIC:'tier-chronic'};return`<span class="tier ${m[t]||'tier-ok'}">${t}</span>`;};
+// ── CQI-primary tier (replaces QI tier everywhere we have cost data) ──
+const getCqiTier=(cqi,cb)=>{
+  if(cqi===null||cqi===undefined||cb<=0)return null; // null = no data
+  if(cqi<=cb*0.5)return'EXCELLENT';
+  if(cqi<=cb)return'OK';
+  if(cqi<=cb*2)return'WATCH';
+  return'CHRONIC';
+};
+// ── Tier badge: CQI-based when available, gray dash when not ──
+const tierBadge=(t)=>{
+  if(!t)return'<span class="tier" style="background:rgba(107,115,148,.1);color:var(--tm);border:1px solid var(--bd2)">—</span>';
+  const m={EXCELLENT:'tier-excellent',OK:'tier-ok',WATCH:'tier-watch',CHRONIC:'tier-chronic'};
+  return`<span class="tier ${m[t]||'tier-ok'}">${t}</span>`;
+};
+const acctCqiTier=(a,cb)=>getCqiTier(a.cqi!==undefined?a.cqi:null,cb);
 
 // ── LOAD ─────────────────────────────────
 async function loadDashboard(){
@@ -826,11 +841,11 @@ function init(){
   Chart.defaults.color='#6b7394';Chart.defaults.borderColor='#252a3a';
   Chart.defaults.font.family='DM Mono';Chart.defaults.font.size=10;
   CUR=MONTHS[MONTHS.length-1];
-  document.getElementById('hdr-sub').textContent=MONTHS.map(fmtM).join(' · ')+' · -Z rolled up · Active + Cr Hold';
+  document.getElementById('hdr-sub').textContent=MONTHS.map(fmtM).join(' · ')+' · -Z rolled up · Active + Cr Hold · CQI primary';
   document.getElementById('months-badge').textContent=MONTHS.length+' Month'+(MONTHS.length>1?'s':'');
   document.getElementById('search-tag').textContent=Object.keys(SI).length+' accounts · all months';
   document.getElementById('sc-range-tag').textContent=fmtM(MONTHS[0])+' → '+fmtM(MONTHS[MONTHS.length-1]);
-  document.getElementById('foot').textContent=`Quality Index Dashboard · ${MONTHS.map(fmtM).join(' + ')} · Live · QI = Replacements per $100K`;
+  document.getElementById('foot').textContent=`Quality Index Dashboard · ${MONTHS.map(fmtM).join(' + ')} · Live · CQI = Est. Replacement Cost per $100K · QI = Replacements per $100K`;
   buildToggles();populateRepFilters();renderAll();renderScorecards();
   document.getElementById('loading').classList.add('gone');
   document.getElementById('app').style.display='block';
@@ -855,12 +870,21 @@ function renderAll(){renderKPIs();renderNarr();renderChronic();renderAlerts();re
 function curAccts(){
   if(CUR!=='combined')return DATA[CUR]?.accounts||[];
   const map={};
-  MONTHS.forEach(m=>DATA[m].accounts.forEach(a=>{
-    if(!map[a.alpha])map[a.alpha]={...a,sales:0,repl:0,monthCount:0,monthsAbove:0};
-    map[a.alpha].sales+=a.sales;map[a.alpha].repl+=a.repl;
-    if(a.sales>0){map[a.alpha].monthCount++;if(a.qi>DATA[m].benchmark)map[a.alpha].monthsAbove++;}
-    map[a.alpha].qi=map[a.alpha].sales>0?map[a.alpha].repl/map[a.alpha].sales*100000:0;
-  }));
+  MONTHS.forEach(m=>{
+    const cb=DATA[m].cqiBenchmark;
+    DATA[m].accounts.forEach(a=>{
+      if(!map[a.alpha])map[a.alpha]={...a,sales:0,repl:0,cabs:0,parts:0,replCost:0,costSales:0,monthCount:0,monthsAbove:0,monthsCqiAbove:0};
+      map[a.alpha].sales+=a.sales;map[a.alpha].repl+=a.repl;
+      if(a.replCost!==null){map[a.alpha].cabs+=a.cabs;map[a.alpha].parts+=a.parts;map[a.alpha].replCost+=a.replCost;map[a.alpha].costSales+=a.sales;}
+      if(a.sales>0){
+        map[a.alpha].monthCount++;
+        if(a.qi>DATA[m].benchmark)map[a.alpha].monthsAbove++;
+        if(a.cqi!==null&&cb>0&&a.cqi>cb)map[a.alpha].monthsCqiAbove++;
+      }
+      map[a.alpha].qi=map[a.alpha].sales>0?map[a.alpha].repl/map[a.alpha].sales*100000:0;
+      map[a.alpha].cqi=map[a.alpha].costSales>0?map[a.alpha].replCost/map[a.alpha].costSales*100000:null;
+    });
+  });
   return Object.values(map).filter(a=>a.monthCount>=COMB_MIN_MONTHS&&a.sales>=COMB_MIN_SALES);
 }
 const curSales=()=>CUR==='combined'?MONTHS.reduce((s,m)=>s+DATA[m].companySales,0):DATA[CUR]?.companySales||0;
@@ -1006,30 +1030,27 @@ function renderChronic(){
   const s=document.getElementById('chronic-section');
   if(CUR!=='combined'){s.style.display='none';return;}
   const cb=cqiBench();
-  const accts=curAccts().filter(a=>a.sales>0&&(a.monthsAbove||0)>=CHRONIC_MONTHS).sort((a,b)=>{
-    const scoreA=(a.sales/100000)*a.qi;
-    const scoreB=(b.sales/100000)*b.qi;
-    return scoreB-scoreA;
-  });
+  // Qualify: CQI above company CQI benchmark 4+ months, has cost data, sorted CQI desc
+  const accts=curAccts().filter(a=>
+    a.sales>0&&a.cqi!==null&&a.cqi!==undefined&&cb>0&&
+    (a.monthsCqiAbove||0)>=CHRONIC_MONTHS
+  ).sort((a,b2)=>b2.cqi-a.cqi);
   if(!accts.length){s.style.display='none';return;}
   s.style.display='block';
-  const b=bench();
-  document.getElementById('chronic-tag').textContent=`${accts.length} accounts · ${CHRONIC_MONTHS}+ of ${MONTHS.length} months above benchmark`;
+  document.getElementById('chronic-tag').textContent=`${accts.length} accounts · CQI above benchmark ${CHRONIC_MONTHS}+ of ${MONTHS.length} months · sorted by CQI`;
   document.getElementById('chronic-grid').innerHTML=accts.slice(0,8).map(a=>{
-    const pct=Math.round((a.monthsAbove||0)/a.monthCount*100);
-    const hasCqi=a.cqi!==null&&a.cqi!==undefined;
-    const cqiVal=hasCqi?a.cqi:null;
-    const costVal=hasCqi?(a.cabs*CAB_COST+a.parts*PARTS_COST):null;
-    const cqiOver=cqiVal!==null&&b>0?(cqiVal-b)/b*100:null;
+    const pct=Math.round((a.monthsCqiAbove||0)/a.monthCount*100);
+    const costVal=a.cabs*CAB_COST+a.parts*PARTS_COST;
+    const cqiOver=cb>0?(a.cqi-cb)/cb*100:0;
     return `<div class="chronic-card" onclick="openAcctModal('${a.alpha}')">
       <div class="cc-alpha">${a.alpha}</div><div class="cc-name" title="${a.dealer}">${a.dealer.slice(0,22)}</div>
       <div class="cc-stats">
         <div><div class="cc-stat-l">Sales</div><div class="cc-stat-v" style="color:var(--ac2)">${f$(a.sales)}</div></div>
-        <div><div class="cc-stat-l" style="color:var(--cr)">Wtd CQI</div><div class="cc-stat-v" style="color:${cqiVal!==null?(cqiVal>b?'var(--bad)':'var(--wn)'):'var(--tm)'}">${cqiVal!==null?fcqi(cqiVal):'—'}</div></div>
-        <div><div class="cc-stat-l">Wtd QI</div><div class="cc-stat-v" style="color:var(--bad);font-size:.6rem">${fqi(a.qi)}</div></div>
+        <div><div class="cc-stat-l" style="color:var(--cr)">Wtd CQI</div><div class="cc-stat-v" style="color:var(--bad)">${fcqi(a.cqi)}</div></div>
+        <div><div class="cc-stat-l">vs Bench</div><div class="cc-stat-v" style="color:var(--bad);font-size:.6rem">+${cqiOver.toFixed(0)}%</div></div>
         <div><div class="cc-stat-l">Rep</div><div class="cc-stat-v" style="font-size:.56rem;color:var(--tm)">${a.salesman.split(' ')[0]}</div></div>
       </div>
-      ${costVal!==null?`<div style="font-family:'DM Mono';font-size:.54rem;color:var(--tm);margin-top:5px;padding-top:5px;border-top:1px solid var(--bd)">Est. cost: <span style="color:var(--bad)">${f$(costVal)}</span> · <span style="color:var(--tm)">${a.cabs}cab / ${a.parts}pts</span></div>`:''}
+      <div style="font-family:'DM Mono';font-size:.54rem;color:var(--tm);margin-top:5px;padding-top:5px;border-top:1px solid var(--bd)">Est. cost: <span style="color:var(--bad)">${f$(costVal)}</span> · <span style="color:var(--tm)">${a.cabs}cab / ${a.parts}pts · QI ${fqi(a.qi)}</span></div>
       <div class="freq-bar" style="margin-top:5px"><div class="freq-fill" style="width:${pct}%"></div></div>
     </div>`;
   }).join('');
@@ -1065,22 +1086,38 @@ function renderAlerts(){
 
 // ── DISTRIBUTION ─────────────────────────
 function renderDist(){
-  const accts=curAccts().filter(a=>a.sales>0),b=bench(),isComb=CUR==='combined';
-  document.getElementById('bench-txt').innerHTML=`Benchmark: <strong>${b.toFixed(2)} replacements per $100K</strong>${isComb?' (7-month weighted)':''}`;
-  document.getElementById('wl-bench-txt').innerHTML=`Watch list: QI > <strong>${b.toFixed(2)}</strong>`;
+  const accts=curAccts().filter(a=>a.sales>0),b=bench(),cb=cqiBench(),isComb=CUR==='combined';
+  document.getElementById('bench-txt').innerHTML=`CQI Benchmark: <strong style="color:var(--cr)">${fcqi(cb)} per $100K</strong>${cb>0?` · QI Benchmark: ${b.toFixed(2)}`:''}${isComb?' (weighted)':''}`;
+  document.getElementById('wl-bench-txt').innerHTML=`QI Benchmark: <strong>${b.toFixed(2)}</strong>`;
+  const cbEl=document.getElementById('wl-cqi-bench-txt');
+  if(cbEl)cbEl.innerHTML=cb>0?`CQI Benchmark: <strong style="color:var(--cr)">${fcqi(cb)} per $100K</strong>`:'CQI Benchmark: calculating…';
   const nb=document.getElementById('noise-banner');
   if(isComb){nb.classList.add('vis');const tot=Object.values(SI).filter(a=>Object.values(a.months).some(m=>m.sales>0)).length;document.getElementById('noise-txt').textContent=`Combined noise filter: ${accts.length} of ${tot} accounts shown (≥${COMB_MIN_MONTHS}/${MONTHS.length} months · ≥$${COMB_MIN_SALES/1000}K combined)`;}
   else{nb.classList.remove('vis');}
   destroyC('ch-buckets');destroyC('ch-bench');destroyC('ch-state');
-  const le5=accts.filter(a=>a.qi<=5).length,ltB=accts.filter(a=>a.qi>5&&a.qi<=b).length,
-    gtB=accts.filter(a=>a.qi>b&&a.qi<=25).length,crit=accts.filter(a=>a.qi>25).length;
+  // ── CQI Buckets (replaces QI Buckets)
+  const costAccts=accts.filter(a=>a.cqi!==null&&a.cqi!==undefined&&cb>0);
+  const noData=accts.length-costAccts.length;
+  const cqiExc=costAccts.filter(a=>a.cqi<=cb*0.5).length;
+  const cqiOk=costAccts.filter(a=>a.cqi>cb*0.5&&a.cqi<=cb).length;
+  const cqiWatch=costAccts.filter(a=>a.cqi>cb&&a.cqi<=cb*2).length;
+  const cqiCrit=costAccts.filter(a=>a.cqi>cb*2).length;
+  const bucketLabels=[`≤50% bench Exc (${cqiExc})`,`At bench OK (${cqiOk})`,`1–2x bench Watch (${cqiWatch})`,`>2x bench Critical (${cqiCrit})`];
+  if(noData>0)bucketLabels.push(`No CQI data (${noData})`);
+  const bucketData=[cqiExc,cqiOk,cqiWatch,cqiCrit];
+  const bucketColors=['#4df5a5','#e8ff47','#ffd147','#ff5555'];
+  if(noData>0){bucketData.push(noData);bucketColors.push('#2a3050');}
   CHARTS['ch-buckets']=new Chart(document.getElementById('ch-buckets'),{type:'doughnut',
-    data:{labels:[`≤5 Excellent (${le5})`,`5–${b.toFixed(1)} Good (${ltB})`,`>${b.toFixed(1)} Worse (${gtB})`,`>25 Critical (${crit})`],
-      datasets:[{data:[le5,ltB,gtB,crit],backgroundColor:['#4df5a5','#e8ff47','#ffd147','#ff5555'],borderColor:'#0d0f14',borderWidth:3,hoverOffset:4}]},
+    data:{labels:bucketLabels,datasets:[{data:bucketData,backgroundColor:bucketColors,borderColor:'#0d0f14',borderWidth:3,hoverOffset:4}]},
     options:{responsive:true,maintainAspectRatio:false,cutout:'65%',plugins:{legend:{position:'bottom',labels:{padding:6,boxWidth:7,font:{size:9}}}}}});
+  // ── CQI vs Benchmark (replaces QI vs Benchmark)
+  const cqiAbove=costAccts.filter(a=>a.cqi>cb).length;
+  const cqiBelow=costAccts.filter(a=>a.cqi<=cb).length;
   CHARTS['ch-bench']=new Chart(document.getElementById('ch-bench'),{type:'bar',
-    data:{labels:['Much Better','Better','Worse'],datasets:[{data:[accts.filter(a=>a.qivb>0.5).length,accts.filter(a=>a.qivb>0&&a.qivb<=0.5).length,accts.filter(a=>a.qivb<=0).length],backgroundColor:['#4df5a5','#e8ff47','#ff5555'],borderRadius:3,borderWidth:0}]},
+    data:{labels:[`Below CQI Bench (${cqiBelow})`,`Above CQI Bench (${cqiAbove})`,`No Data (${noData})`],
+      datasets:[{data:[cqiBelow,cqiAbove,noData],backgroundColor:['#4df5a5','#ff5555','#2a3050'],borderRadius:3,borderWidth:0}]},
     options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false}},y:{grid:{color:'#1c2030'}}}}});
+  // ── State by Sales (unchanged)
   const stmap={};accts.forEach(a=>{if(!stmap[a.state])stmap[a.state]={s:0};stmap[a.state].s+=a.sales;});
   const sts=Object.entries(stmap).map(([k,v])=>({k,s:v.s})).sort((a,b2)=>b2.s-a.s).slice(0,12);
   CHARTS['ch-state']=new Chart(document.getElementById('ch-state'),{type:'bar',
@@ -1092,33 +1129,43 @@ function renderDist(){
 function repRollup(){
   const map={};
   curAccts().filter(a=>a.sales>0).forEach(a=>{
-    if(!map[a.salesman])map[a.salesman]={salesman:a.salesman,sales:0,repl:0,n:0,accts:[]};
+    if(!map[a.salesman])map[a.salesman]={salesman:a.salesman,sales:0,repl:0,replCost:0,costSales:0,n:0,accts:[]};
     map[a.salesman].sales+=a.sales;map[a.salesman].repl+=a.repl;map[a.salesman].n++;map[a.salesman].accts.push(a);
+    if(a.replCost!==null){map[a.salesman].replCost+=a.replCost;map[a.salesman].costSales+=a.sales;}
   });
-  return Object.values(map).map(r=>({...r,wtdQI:r.sales>0?r.repl/r.sales*100000:0})).sort((a,b)=>b.sales-a.sales);
+  return Object.values(map).map(r=>({...r,
+    wtdQI:r.sales>0?r.repl/r.sales*100000:0,
+    wtdCQI:r.costSales>0?r.replCost/r.costSales*100000:null
+  })).sort((a,b)=>b.sales-a.sales);
 }
 function renderReps(){
-  const reps=repRollup(),b=bench(),mx=Math.max(...reps.map(r=>r.sales));
+  const reps=repRollup(),b=bench(),cb=cqiBench(),mx=Math.max(...reps.map(r=>r.sales));
   document.getElementById('sbars').innerHTML=reps.map(r=>{
     const pct=(r.sales/mx*100).toFixed(1);
-    const qc=r.wtdQI<=5?'var(--gd)':r.wtdQI<=b?'var(--ac)':r.wtdQI<=25?'var(--wn)':'var(--bad)';
+    const cqiColor=r.wtdCQI===null?'var(--tm)':r.wtdCQI<=cb*0.5?'var(--gd)':r.wtdCQI<=cb?'var(--ac)':r.wtdCQI<=cb*2?'var(--wn)':'var(--bad)';
+    const cqiStr=r.wtdCQI!==null?`<span style="color:${cqiColor};font-size:.57rem">CQI ${fcqi(r.wtdCQI)}</span>`:`<span style="color:var(--td);font-size:.57rem">CQI —</span>`;
     return `<div class="sbar-row" onclick="showPage('sc',document.querySelector('.ntab:nth-child(4)'))">
       <div class="sbar-name">${r.salesman}</div>
       <div class="sbar-track"><div class="sbar-fill" style="width:0%" data-w="${pct}%"></div></div>
-      <div class="sbar-meta">${f$(r.sales)}<br><span style="color:var(--td)">${r.n} accts</span><br><span style="color:${qc};font-size:.57rem">wtd QI ${r.wtdQI.toFixed(1)}</span></div>
+      <div class="sbar-meta">${f$(r.sales)}<br><span style="color:var(--td)">${r.n} accts</span><br>${cqiStr}</div>
     </div>`;
   }).join('');
   setTimeout(()=>document.querySelectorAll('.sbar-fill').forEach(el=>el.style.width=el.dataset.w),80);
-  const sorted=[...reps].sort((a,b2)=>a.wtdQI-b2.wtdQI);
+  // Quality flip table — sorted by CQI, fallback to QI
+  const sorted=[...reps].sort((a,b2)=>{
+    if(a.wtdCQI===null&&b2.wtdCQI===null)return a.wtdQI-b2.wtdQI;
+    if(a.wtdCQI===null)return 1;if(b2.wtdCQI===null)return -1;
+    return a.wtdCQI-b2.wtdCQI;
+  });
   document.getElementById('qi-rank-body').innerHTML=sorted.map((r,i)=>`
     <tr class="rep-main" onclick="toggleRD(${i})"><td style="font-weight:600">${r.salesman}</td><td class="nr">${r.n}</td><td class="nr">${f$(r.sales)}</td>
-      <td class="nr"><span class="qp ${qcls(r.wtdQI,b)}">${r.wtdQI.toFixed(2)}</span></td></tr>
+      <td class="nr">${r.wtdCQI!==null?`<span class="qp ${cqicls(r.wtdCQI,cb)}">${fcqi(r.wtdCQI)}</span>`:'<span style="color:var(--td);font-family:DM Mono;font-size:.6rem">—</span>'}</td></tr>
     <tbody class="rep-detail" id="rd-${i}"><tr><td colspan="4"><div class="rep-detail-inner">
-      <div style="font-family:'DM Mono';font-size:.55rem;color:var(--tm);letter-spacing:.1em">WORST 5 BY QI</div>
-      <div class="worst-grid">${[...r.accts].filter(a=>a.sales>0).sort((a,b2)=>b2.qi-a.qi).slice(0,5).map(a=>`
+      <div style="font-family:'DM Mono';font-size:.55rem;color:var(--tm);letter-spacing:.1em">WORST 5 BY CQI</div>
+      <div class="worst-grid">${[...r.accts].filter(a=>a.sales>0&&a.cqi!==null).sort((a,b2)=>b2.cqi-a.cqi).slice(0,5).map(a=>`
         <div class="worst-card" style="cursor:pointer" onclick="event.stopPropagation();openAcctModal('${a.alpha}')">
           <div class="wc-label">${a.alpha}</div><div class="wc-name">${a.dealer.slice(0,16)}</div>
-          <div class="wc-val ${qcls(a.qi,b)}">${fqi(a.qi)}</div>
+          <div class="wc-val ${cqicls(a.cqi,cb)}">${fcqi(a.cqi)}</div>
           <div class="wc-label" style="margin-top:2px">${f$(a.sales)}</div>
         </div>`).join('')}
       </div></div></td></tr></tbody>`).join('');
@@ -1128,11 +1175,21 @@ function doFlip(){flipped=!flipped;document.getElementById('flip-inner').classLi
 
 // ── STATE ────────────────────────────────
 function renderState(){
-  const b=bench(),map={};
-  curAccts().filter(a=>a.sales>0).forEach(a=>{if(!map[a.state])map[a.state]={s:0,r:0,n:0};map[a.state].s+=a.sales;map[a.state].r+=a.repl;map[a.state].n++;});
-  document.getElementById('state-body').innerHTML=Object.entries(map).map(([k,v])=>({k,s:v.s,r:v.r,n:v.n,qi:v.s>0?v.r/v.s*100000:0}))
-    .sort((a,b2)=>b2.s-a.s).map(s=>`<tr><td><strong>${s.k}</strong></td><td class="nr">${s.n}</td>
-      <td class="nr" style="color:var(--ac2)">${f$(s.s)}</td><td class="nr"><span class="qp ${qcls(s.qi,b)}">${s.qi.toFixed(2)}</span></td></tr>`).join('');
+  const b=bench(),cb=cqiBench(),map={};
+  curAccts().filter(a=>a.sales>0).forEach(a=>{
+    if(!map[a.state])map[a.state]={s:0,r:0,rc:0,cs:0,n:0};
+    map[a.state].s+=a.sales;map[a.state].r+=a.repl;map[a.state].n++;
+    if(a.replCost!==null){map[a.state].rc+=a.replCost;map[a.state].cs+=a.sales;}
+  });
+  document.getElementById('state-body').innerHTML=Object.entries(map).map(([k,v])=>({
+    k,s:v.s,r:v.r,n:v.n,
+    qi:v.s>0?v.r/v.s*100000:0,
+    cqi:v.cs>0?v.rc/v.cs*100000:null
+  })).sort((a,b2)=>b2.s-a.s).map(s=>`<tr>
+    <td><strong>${s.k}</strong></td><td class="nr">${s.n}</td>
+    <td class="nr" style="color:var(--ac2)">${f$(s.s)}</td>
+    <td class="nr">${s.cqi!==null?`<span class="qp ${cqicls(s.cqi,cb)}">${fcqi(s.cqi)}</span>`:'<span style="color:var(--td);font-family:DM Mono;font-size:.6rem">—</span>'}</td>
+    <td class="nr hide-m"><span class="qp ${qcls(s.qi,b)}">${s.qi.toFixed(1)}</span></td></tr>`).join('');
 }
 
 // ── SCORECARDS ───────────────────────────
@@ -1463,9 +1520,10 @@ function populateRepFilters(){
   document.getElementById('rep-fil-wl').innerHTML=opts;
 }
 function acctTier(a){
-  const b=bench();
-  if(CUR==='combined')return getTier(a.qi,b,a.monthsAbove||0,a.monthCount||MONTHS.length);
-  return a.qi<=5?'EXCELLENT':a.qi<=b?'OK':a.qi<=b*1.5?'WATCH':'CHRONIC';
+  const cb=cqiBench();
+  const cqiVal=a.cqi!==undefined?a.cqi:null;
+  const t=getCqiTier(cqiVal,cb);
+  return t; // null returns gray dash via tierBadge
 }
 function renderCust(){
   const rep=document.getElementById('rep-fil-cust').value;
@@ -1513,7 +1571,8 @@ function renderWL(){
   const b=bench(),cb=cqiBench();
   const wlSort=document.getElementById('sort-wl')?.value||'cqi-worst';
   const cqiFil=document.getElementById('cqi-fil-wl')?.value||'';
-  let accts=curAccts().filter(a=>a.sales>0&&a.qi>b);
+  const volFloor=CUR==='combined'?75000:10000;
+  let accts=curAccts().filter(a=>a.sales>0&&a.qi>b&&a.sales>=volFloor);
   if(rep)accts=accts.filter(a=>a.salesman===rep);
   if(cqiFil==='cqi-only')accts=accts.filter(a=>a.cqi!==null&&a.cqi!==undefined);
   // ── Sort
@@ -1558,45 +1617,55 @@ function renderWL(){
 function renderTrends(){
   if(MONTHS.length<2){document.getElementById('trend-range-tag').textContent='Need 2+ months';return;}
   const m1=MONTHS[MONTHS.length-2],m2=MONTHS[MONTHS.length-1];
+  const cb1=DATA[m1].cqiBenchmark,cb2=DATA[m2].cqiBenchmark;
   document.getElementById('trend-range-tag').textContent=fmtM(MONTHS[0])+' → '+fmtM(MONTHS[MONTHS.length-1]);
-  document.getElementById('imp-tag').textContent=`≥$${TREND_MIN_SALES/1000}K · was above benchmark · QI drop >${Math.abs(TREND_MIN_IMP)}`;
-  document.getElementById('wor-tag').textContent=`≥$${TREND_MIN_SALES/1000}K · now above benchmark · QI rise >${TREND_MIN_WOR}`;
+  document.getElementById('imp-tag').textContent=`≥$${TREND_MIN_SALES/1000}K · was above CQI benchmark · CQI improved`;
+  document.getElementById('wor-tag').textContent=`≥$${TREND_MIN_SALES/1000}K · now above CQI benchmark · CQI worsened`;
   destroyC('ch-sales-trend');destroyC('ch-qi-trend');
   CHARTS['ch-sales-trend']=new Chart(document.getElementById('ch-sales-trend'),{type:'bar',
     data:{labels:MONTHS.map(fmtM),datasets:[{data:MONTHS.map(m=>DATA[m].companySales),backgroundColor:MONTHS.map((_,i)=>`rgba(71,200,255,${0.22+i*0.1})`),borderColor:'#47c8ff',borderWidth:2,borderRadius:4}]},
     options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>` ${f$(c.parsed.y)}`}}},scales:{x:{grid:{display:false}},y:{grid:{color:'#1c2030'},ticks:{callback:v=>f$(v)}}}}});
+  // CQI benchmark trend replaces QI benchmark trend
   CHARTS['ch-qi-trend']=new Chart(document.getElementById('ch-qi-trend'),{type:'line',
-    data:{labels:MONTHS.map(fmtM),datasets:[{data:MONTHS.map(m=>DATA[m].benchmark),borderColor:'#ffd147',backgroundColor:'rgba(255,209,71,.08)',borderWidth:2,pointRadius:5,pointBackgroundColor:'#ffd147',tension:.3,fill:true}]},
-    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false}},y:{grid:{color:'#1c2030'},min:0}}}});
-  const d1={},d2={},b1=DATA[m1].benchmark,b2=DATA[m2].benchmark;
-  DATA[m1].accounts.filter(a=>a.sales>0).forEach(a=>d1[a.alpha]=a);
-  DATA[m2].accounts.filter(a=>a.sales>0).forEach(a=>d2[a.alpha]=a);
-  const fq=v=>v>9999?'>9999':v.toFixed(1);
-  // Improved: had sales in both months, was above benchmark before, meaningful drop, ≥$25K
+    data:{labels:MONTHS.map(fmtM),datasets:[
+      {label:'CQI Benchmark',data:MONTHS.map(m=>DATA[m].cqiBenchmark),borderColor:'#ff9f47',backgroundColor:'rgba(255,159,71,.08)',borderWidth:2,pointRadius:5,pointBackgroundColor:'#ff9f47',tension:.3,fill:true},
+      {label:'QI Benchmark',data:MONTHS.map(m=>DATA[m].benchmark),borderColor:'rgba(255,209,71,.4)',borderWidth:1,borderDash:[4,4],pointRadius:3,pointBackgroundColor:'rgba(255,209,71,.4)',tension:.3,fill:false,yAxisID:'y2'}
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{position:'bottom',labels:{padding:8,boxWidth:9,font:{size:9}}}},
+      scales:{
+        x:{grid:{display:false}},
+        y:{grid:{color:'#1c2030'},min:0,position:'left',ticks:{callback:v=>'$'+v.toFixed(0)}},
+        y2:{grid:{display:false},min:0,position:'right',ticks:{callback:v=>v.toFixed(1)}}
+      }}});
+  // CQI-based improved/worsened — accounts with CQI data in both months, volume floor
+  const d1={},d2={};
+  DATA[m1].accounts.filter(a=>a.sales>0&&a.cqi!==null).forEach(a=>d1[a.alpha]=a);
+  DATA[m2].accounts.filter(a=>a.sales>0&&a.cqi!==null).forEach(a=>d2[a.alpha]=a);
+  const fcq=v=>fcqi(v);
   const improved=Object.keys(d1).filter(k=>d2[k])
-    .map(k=>({...d2[k],qi1:d1[k].qi,qi2:d2[k].qi,chg:d2[k].qi-d1[k].qi}))
-    .filter(c=>c.chg<TREND_MIN_IMP&&c.sales>=TREND_MIN_SALES&&c.qi1>b1)
+    .map(k=>({...d2[k],cqi1:d1[k].cqi,cqi2:d2[k].cqi,chg:d2[k].cqi-d1[k].cqi}))
+    .filter(c=>c.chg<0&&c.sales>=TREND_MIN_SALES&&c.cqi1>cb1)
     .sort((a,b)=>a.chg-b.chg);
-  // Worsened: meaningful rise, now above benchmark, ≥$25K
   const worsened=Object.keys(d1).filter(k=>d2[k])
-    .map(k=>({...d2[k],qi1:d1[k].qi,qi2:d2[k].qi,chg:d2[k].qi-d1[k].qi}))
-    .filter(c=>c.chg>TREND_MIN_WOR&&c.sales>=TREND_MIN_SALES&&c.qi2>b2)
+    .map(k=>({...d2[k],cqi1:d1[k].cqi,cqi2:d2[k].cqi,chg:d2[k].cqi-d1[k].cqi}))
+    .filter(c=>c.chg>0&&c.sales>=TREND_MIN_SALES&&c.cqi2>cb2)
     .sort((a,b)=>b.chg-a.chg);
   document.getElementById('improved-body').innerHTML=improved.slice(0,12).map(c=>`
     <tr class="clickable" onclick="openAcctModal('${c.alpha}')">
       <td><span class="alpha">${c.alpha}</span></td><td><div class="dn">${c.dealer}</div></td>
       <td style="font-family:'DM Mono';font-size:.7rem">${c.state}</td>
-      <td class="nr"><span class="tv-dn">${fq(c.qi1)}</span></td>
-      <td class="nr"><span class="qp ${qcls(c.qi2,b2)}">${fq(c.qi2)}</span></td>
-      <td class="nr"><span class="tv-up">▼ ${fq(Math.abs(c.chg))}</span></td>
+      <td class="nr"><span style="color:var(--bad);font-family:'DM Mono';font-size:.7rem">${fcq(c.cqi1)}</span></td>
+      <td class="nr"><span class="qp ${cqicls(c.cqi2,cb2)}">${fcq(c.cqi2)}</span></td>
+      <td class="nr"><span class="tv-up">▼ ${fcq(Math.abs(c.chg))}</span></td>
       <td class="nr" style="color:var(--ac2)">${f$(c.sales)}</td></tr>`).join('');
   document.getElementById('worsened-body').innerHTML=worsened.slice(0,12).map(c=>`
     <tr class="clickable" onclick="openAcctModal('${c.alpha}')">
       <td><span class="alpha">${c.alpha}</span></td><td><div class="dn">${c.dealer}</div></td>
       <td style="font-family:'DM Mono';font-size:.7rem">${c.state}</td>
-      <td class="nr"><span class="tv-up">${fq(c.qi1)}</span></td>
-      <td class="nr"><span class="qp qb">${fq(c.qi2)}</span></td>
-      <td class="nr"><span class="tv-dn">▲ ${fq(c.chg)}</span></td>
+      <td class="nr"><span style="color:var(--gd);font-family:'DM Mono';font-size:.7rem">${fcq(c.cqi1)}</span></td>
+      <td class="nr"><span class="qp qb">${fcq(c.cqi2)}</span></td>
+      <td class="nr"><span class="tv-dn">▲ ${fcq(c.chg)}</span></td>
       <td class="nr" style="color:var(--ac2)">${f$(c.sales)}</td></tr>`).join('');
 }
 
