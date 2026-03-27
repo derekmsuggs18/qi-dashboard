@@ -543,8 +543,8 @@ body{background:var(--bg);color:var(--tx);font-family:'DM Sans',sans-serif;min-h
     <div class="page act" id="page-ov">
       <div class="krow" style="grid-template-columns:repeat(6,1fr)">
         <div class="kc" style="--kl:var(--ac2)" onclick="openKpiModal('sales')"><div class="kl">Company Sales</div><div class="kv" id="kv-sales">—</div><div class="ks" id="ks-sales"></div><span class="kbadge" id="kb-sales"></span></div>
+        <div class="kc" style="--kl:var(--cr);background:rgba(255,159,71,.06);border-color:rgba(255,159,71,.35)" onclick="openKpiModal('cqi')"><div class="kl" style="color:var(--cr)">CQI Benchmark</div><div class="kv" id="kv-cqi" style="font-size:1.5rem;color:var(--cr)">—</div><div class="ks" style="color:var(--cr);opacity:.7">Est. Cost per $100K</div><span class="kbadge" id="kb-cqi"></span></div>
         <div class="kc" style="--kl:var(--wn)" onclick="openKpiModal('qi')"><div class="kl">QI Benchmark</div><div class="kv" id="kv-qi">—</div><div class="ks">Replacements per $100K</div><span class="kbadge" id="kb-qi"></span></div>
-        <div class="kc" style="--kl:var(--cr)" onclick="openKpiModal('cqi')"><div class="kl">CQI Benchmark</div><div class="kv" id="kv-cqi" style="font-size:1.5rem">—</div><div class="ks">Est. Cost per $100K</div><span class="kbadge" id="kb-cqi"></span></div>
         <div class="kc" style="--kl:var(--ac)" onclick="openKpiModal('accts')"><div class="kl">Qualified Accounts</div><div class="kv" id="kv-accts">—</div><div class="ks" id="ks-accts"></div><span class="kbadge" id="kb-accts"></span></div>
         <div class="kc" style="--kl:var(--gd)" onclick="openKpiModal('trans')"><div class="kl">Transacting</div><div class="kv" id="kv-trans">—</div><div class="ks" id="ks-trans"></div><span class="kbadge" id="kb-trans"></span></div>
         <div class="kc" style="--kl:var(--gd)" onclick="openKpiModal('exc')"><div class="kl">Excellent QI ≤5</div><div class="kv" id="kv-exc">—</div><div class="ks">Below 5 per $100K</div><span class="kbadge" id="kb-exc"></span></div>
@@ -628,12 +628,16 @@ body{background:var(--bg);color:var(--tx);font-family:'DM Sans',sans-serif;min-h
         </select>
         <span class="rfil-lbl" style="margin-left:8px">Sort:</span>
         <select class="rsel" id="sort-cust" onchange="renderCust()">
-          <option value="sales">Sales ↓</option><option value="qi-worst">QI Worst</option><option value="qi-best">QI Best</option>
+          <option value="cqi-worst">CQI Worst</option>
+          <option value="cqi-best">CQI Best</option>
+          <option value="sales">Sales ↓</option>
+          <option value="qi-worst">QI Worst</option>
+          <option value="qi-best">QI Best</option>
         </select>
         <span class="rfil-lbl" style="margin-left:8px;color:var(--tm)" id="cust-count"></span>
       </div>
       <div class="tw"><div class="tscroll"><table class="dt">
-        <thead><tr><th>#</th><th>Alpha</th><th>Dealer</th><th class="hide-m">Status</th><th class="hide-m">Rep</th><th class="hide-m">St</th><th class="nr">Sales</th><th class="nr hide-m">Repl</th><th class="nr">QI</th><th class="nr hide-m">CQI</th><th class="nr hide-m">vs Bench</th><th>Tier</th></tr></thead>
+        <thead><tr><th>#</th><th>Alpha</th><th>Dealer</th><th class="hide-m">Status</th><th class="hide-m">Rep</th><th class="hide-m">St</th><th class="nr">Sales</th><th class="nr hide-m">Repl</th><th class="nr" style="color:var(--cr)">CQI</th><th class="nr hide-m">QI</th><th class="nr hide-m">vs QI Bench</th><th>Tier</th></tr></thead>
         <tbody id="cust-body"></tbody>
       </table></div></div>
     </div>
@@ -646,15 +650,23 @@ body{background:var(--bg);color:var(--tx);font-family:'DM Sans',sans-serif;min-h
         <select class="rsel" id="rep-fil-wl" onchange="renderWL()"><option value="">All</option></select>
         <span class="rfil-lbl" style="margin-left:8px">Sort:</span>
         <select class="rsel" id="sort-wl" onchange="renderWL()">
+          <option value="cqi-worst">CQI Worst First</option>
+          <option value="cqi-over-bench">CQI % Over Benchmark</option>
           <option value="sales">Sales ↓</option>
           <option value="qi-worst">QI Worst First</option>
-          <option value="over-bench">% Over Benchmark</option>
+          <option value="over-bench">QI % Over Benchmark</option>
+        </select>
+        <span class="rfil-lbl" style="margin-left:8px">CQI Data:</span>
+        <select class="rsel" id="cqi-fil-wl" onchange="renderWL()">
+          <option value="">All Accounts</option>
+          <option value="cqi-only">CQI Data Only</option>
         </select>
         <span class="rfil-lbl" style="margin-left:8px;color:var(--tm)" id="wl-count"></span>
       </div>
       <div class="bench-bar"><div class="bench-dot"></div><span id="wl-bench-txt">—</span></div>
+      <div class="bench-bar" style="background:rgba(255,159,71,.06);border-color:rgba(255,159,71,.25)"><div class="bench-dot" style="background:var(--cr)"></div><span id="wl-cqi-bench-txt" style="color:var(--cr)">—</span></div>
       <div class="tw"><div class="tscroll"><table class="dt">
-        <thead><tr><th>Alpha</th><th>Dealer</th><th class="hide-m">Status</th><th class="hide-m">Rep</th><th class="hide-m">St</th><th class="nr">Sales</th><th class="nr">QI</th><th class="nr hide-m">CQI</th><th class="nr hide-m">Over Bench</th><th>Tier</th></tr></thead>
+        <thead><tr><th>Alpha</th><th>Dealer</th><th class="hide-m">Status</th><th class="hide-m">Rep</th><th class="hide-m">St</th><th class="nr">Sales</th><th class="nr" style="color:var(--cr)">CQI</th><th class="nr hide-m">QI</th><th class="nr hide-m">Over QI Bench</th><th>Tier</th></tr></thead>
         <tbody id="wl-body"></tbody>
       </table></div></div>
     </div>
@@ -1008,12 +1020,13 @@ function renderChronic(){
     const hasCqi=a.cqi!==null&&a.cqi!==undefined;
     const cqiVal=hasCqi?a.cqi:null;
     const costVal=hasCqi?(a.cabs*CAB_COST+a.parts*PARTS_COST):null;
+    const cqiOver=cqiVal!==null&&b>0?(cqiVal-b)/b*100:null;
     return `<div class="chronic-card" onclick="openAcctModal('${a.alpha}')">
       <div class="cc-alpha">${a.alpha}</div><div class="cc-name" title="${a.dealer}">${a.dealer.slice(0,22)}</div>
       <div class="cc-stats">
         <div><div class="cc-stat-l">Sales</div><div class="cc-stat-v" style="color:var(--ac2)">${f$(a.sales)}</div></div>
-        <div><div class="cc-stat-l">Wtd QI</div><div class="cc-stat-v" style="color:var(--bad)">${fqi(a.qi)}</div></div>
-        <div><div class="cc-stat-l">CQI</div><div class="cc-stat-v" style="color:${cqiVal!==null?(cqiVal>cb?'var(--bad)':'var(--wn)'):'var(--tm)'}">${cqiVal!==null?fcqi(cqiVal):'—'}</div></div>
+        <div><div class="cc-stat-l" style="color:var(--cr)">Wtd CQI</div><div class="cc-stat-v" style="color:${cqiVal!==null?(cqiVal>b?'var(--bad)':'var(--wn)'):'var(--tm)'}">${cqiVal!==null?fcqi(cqiVal):'—'}</div></div>
+        <div><div class="cc-stat-l">Wtd QI</div><div class="cc-stat-v" style="color:var(--bad);font-size:.6rem">${fqi(a.qi)}</div></div>
         <div><div class="cc-stat-l">Rep</div><div class="cc-stat-v" style="font-size:.56rem;color:var(--tm)">${a.salesman.split(' ')[0]}</div></div>
       </div>
       ${costVal!==null?`<div style="font-family:'DM Mono';font-size:.54rem;color:var(--tm);margin-top:5px;padding-top:5px;border-top:1px solid var(--bd)">Est. cost: <span style="color:var(--bad)">${f$(costVal)}</span> · <span style="color:var(--tm)">${a.cabs}cab / ${a.parts}pts</span></div>`:''}
@@ -1232,8 +1245,8 @@ function renderScorecards(){
         <div class="sc-meta">${uniqueAccts} unique accounts · ${avgPerMonth} avg active/month · Rank ${rank}/${total}</div>
         <div class="sc-stats">
           <div class="sc-stat"><div class="sc-stat-l">${MONTHS.length}-MO SALES</div><div class="sc-stat-v" style="color:var(--ac2);font-size:1rem">${f$(rep.totalSales)}</div></div>
+          <div class="sc-stat" style="border-color:rgba(255,159,71,.3);background:rgba(255,159,71,.04)"><div class="sc-stat-l" style="color:var(--cr)">WTD CQI</div><div class="sc-stat-v" style="font-size:.95rem;color:${wtdCQI===null?'var(--tm)':cqicls(wtdCQI,cb)==='qe'?'var(--gd)':cqicls(wtdCQI,cb)==='qg'?'var(--ac)':cqicls(wtdCQI,cb)==='qw'?'var(--wn)':'var(--bad)'}">${wtdCQI!==null?fcqi(wtdCQI):'—'}</div></div>
           <div class="sc-stat"><div class="sc-stat-l">WTD QI</div><div class="sc-stat-v" style="color:${qcls(wtdQI,b)==='qe'?'var(--gd)':qcls(wtdQI,b)==='qg'?'var(--ac)':qcls(wtdQI,b)==='qw'?'var(--wn)':'var(--bad)'}">${wtdQI.toFixed(2)}</div></div>
-          <div class="sc-stat"><div class="sc-stat-l">WTD CQI</div><div class="sc-stat-v" style="font-size:.95rem;color:${wtdCQI===null?'var(--tm)':cqicls(wtdCQI,cb)==='qe'?'var(--gd)':cqicls(wtdCQI,cb)==='qg'?'var(--ac)':cqicls(wtdCQI,cb)==='qw'?'var(--wn)':'var(--bad)'}">${wtdCQI!==null?fcqi(wtdCQI):'—'}</div></div>
         </div>
         <div class="sc-trend"><canvas id="sc-chart-${ri}"></canvas></div>
         <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px">
@@ -1462,7 +1475,18 @@ function renderCust(){
   let accts=curAccts().filter(a=>a.sales>0);
   if(rep)accts=accts.filter(a=>a.salesman===rep);
   if(tierFil)accts=accts.filter(a=>acctTier(a)===tierFil);
-  if(sort==='qi-worst')accts.sort((a,b2)=>b2.qi-a.qi);
+  // ── Sort — CQI sorts push nulls to bottom
+  if(sort==='cqi-worst')accts.sort((a,b2)=>{
+    if(a.cqi===null&&b2.cqi===null)return 0;
+    if(a.cqi===null)return 1;if(b2.cqi===null)return -1;
+    return b2.cqi-a.cqi;
+  });
+  else if(sort==='cqi-best')accts.sort((a,b2)=>{
+    if(a.cqi===null&&b2.cqi===null)return 0;
+    if(a.cqi===null)return 1;if(b2.cqi===null)return -1;
+    return a.cqi-b2.cqi;
+  });
+  else if(sort==='qi-worst')accts.sort((a,b2)=>b2.qi-a.qi);
   else if(sort==='qi-best')accts.sort((a,b2)=>a.qi-b2.qi);
   else accts.sort((a,b2)=>b2.sales-a.sales);
   document.getElementById('cust-count').textContent=`${accts.length} accounts`;
@@ -1476,9 +1500,9 @@ function renderCust(){
       <td class="hide-m">${spill(a.status)}</td><td class="hide-m" style="font-size:.68rem;color:var(--tm)">${a.salesman}</td>
       <td class="hide-m" style="font-family:'DM Mono';font-size:.7rem">${a.state}</td>
       <td class="nr" style="color:var(--ac2)">${f$(a.sales)}</td><td class="nr hide-m">${a.repl}</td>
-      <td class="nr"><span class="qp ${qcls(a.qi,b)}">${fqi(a.qi)}</span></td>
-      <td class="nr hide-m">${acctCqi!==null?`<span class="qp ${cqicls(acctCqi,cb)}">${fcqi(acctCqi)}</span>`:'<span style="color:var(--td);font-family:DM Mono;font-size:.6rem">—</span>'}</td>
-      <td class="nr"><span class="${vsB<0?'tv-up':vsB>0?'tv-dn':'tv-fl'}">${vsB<0?'▼ '+Math.abs(vsB).toFixed(1)+'%':vsB>0?'▲ '+vsB.toFixed(1)+'%':'—'}</span></td>
+      <td class="nr">${acctCqi!==null?`<span class="qp ${cqicls(acctCqi,cb)}">${fcqi(acctCqi)}</span>`:'<span style="color:var(--td);font-family:DM Mono;font-size:.6rem">—</span>'}</td>
+      <td class="nr hide-m"><span class="qp ${qcls(a.qi,b)}">${fqi(a.qi)}</span></td>
+      <td class="nr hide-m"><span class="${vsB<0?'tv-up':vsB>0?'tv-dn':'tv-fl'}">${vsB<0?'▼ '+Math.abs(vsB).toFixed(1)+'%':vsB>0?'▲ '+vsB.toFixed(1)+'%':'—'}</span></td>
       <td>${tierBadge(t)}</td></tr>`;
   }).join('');
 }
@@ -1487,23 +1511,44 @@ function renderCust(){
 function renderWL(){
   const rep=document.getElementById('rep-fil-wl').value;
   const b=bench(),cb=cqiBench();
+  const wlSort=document.getElementById('sort-wl')?.value||'cqi-worst';
+  const cqiFil=document.getElementById('cqi-fil-wl')?.value||'';
   let accts=curAccts().filter(a=>a.sales>0&&a.qi>b);
   if(rep)accts=accts.filter(a=>a.salesman===rep);
-  const wlSort=document.getElementById('sort-wl')?.value||'qi-worst';
-  if(wlSort==='sales') accts.sort((a,b2)=>b2.sales-a.sales);
-  else if(wlSort==='over-bench') accts.sort((a,b2)=>((b2.qi-b)/b)-((a.qi-b)/b));
+  if(cqiFil==='cqi-only')accts=accts.filter(a=>a.cqi!==null&&a.cqi!==undefined);
+  // ── Sort
+  if(wlSort==='cqi-worst')accts.sort((a,b2)=>{
+    if(a.cqi===null&&b2.cqi===null)return 0;
+    if(a.cqi===null)return 1;if(b2.cqi===null)return -1;
+    return b2.cqi-a.cqi;
+  });
+  else if(wlSort==='cqi-over-bench')accts.sort((a,b2)=>{
+    const ra=a.cqi!==null&&cb>0?(a.cqi-cb)/cb:-Infinity;
+    const rb=b2.cqi!==null&&cb>0?(b2.cqi-cb)/cb:-Infinity;
+    return rb-ra;
+  });
+  else if(wlSort==='sales')accts.sort((a,b2)=>b2.sales-a.sales);
+  else if(wlSort==='over-bench')accts.sort((a,b2)=>((b2.qi-b)/b)-((a.qi-b)/b));
   else accts.sort((a,b2)=>b2.qi-a.qi);
-  document.getElementById('wl-count').textContent=`${accts.length} accounts above benchmark`;
+  document.getElementById('wl-count').textContent=`${accts.length} accounts above QI benchmark`;
+  // Bench bars
+  const bEl=document.getElementById('wl-bench-txt');
+  if(bEl)bEl.textContent=`QI Benchmark: ${b.toFixed(2)} — accounts above this line require attention`;
+  const cbEl=document.getElementById('wl-cqi-bench-txt');
+  if(cbEl)cbEl.textContent=cb>0?`CQI Benchmark: ${fcqi(cb)} per $100K — accounts above this are above average replacement cost`:'CQI Benchmark: calculating…';
   document.getElementById('wl-body').innerHTML=accts.map(a=>{
     const over=(a.qi-b)/b*100,t=acctTier(a);
     const acctCqi=a.cqi!==null&&a.cqi!==undefined?a.cqi:null;
+    const cqiOver=acctCqi!==null&&cb>0?(acctCqi-cb)/cb*100:null;
     return `<tr class="clickable" onclick="openAcctModal('${a.alpha}')">
       <td><span class="alpha">${a.alpha}</span></td><td><div class="dn" title="${a.dealer}">${a.dealer}</div></td>
       <td class="hide-m">${spill(a.status)}</td><td class="hide-m" style="font-size:.68rem;color:var(--tm)">${a.salesman}</td>
       <td class="hide-m" style="font-family:'DM Mono';font-size:.7rem">${a.state}</td>
       <td class="nr" style="color:var(--ac2)">${f$(a.sales)}</td>
-      <td class="nr"><span class="qp qb">${fqi(a.qi)}</span></td>
-      <td class="nr hide-m">${acctCqi!==null?`<span class="qp ${cqicls(acctCqi,cb)}">${fcqi(acctCqi)}</span>`:'<span style="color:var(--td);font-family:DM Mono;font-size:.6rem">—</span>'}</td>
+      <td class="nr">${acctCqi!==null
+        ?`<span class="qp ${cqicls(acctCqi,cb)}">${fcqi(acctCqi)}</span>${cqiOver!==null?`<br><span style="font-family:'DM Mono';font-size:.52rem;color:${cqiOver>0?'var(--bad)':'var(--gd)'}">${cqiOver>0?'+':''}${cqiOver.toFixed(0)}%</span>`:''}`
+        :'<span style="color:var(--td);font-family:DM Mono;font-size:.6rem">—</span>'}</td>
+      <td class="nr hide-m"><span class="qp qb">${fqi(a.qi)}</span></td>
       <td class="nr hide-m"><span class="tv-dn">+${over.toFixed(1)}%</span></td>
       <td>${tierBadge(t)}</td></tr>`;
   }).join('');
@@ -1580,8 +1625,8 @@ function openAcctModal(alpha){
   document.getElementById('am-sub').textContent=`${alpha} · ${a.salesman} · ${a.state} · ${a.status} · ${tierBadge(tier).replace(/<[^>]+>/g,'')} tier`;
   document.getElementById('am-krow').innerHTML=`
     <div class="modal-kc"><div class="modal-kl">Total Sales</div><div class="modal-kv" style="color:var(--ac2)">${f$(totalSales)}</div></div>
+    <div class="modal-kc" style="border-color:rgba(255,159,71,.35);background:rgba(255,159,71,.04)"><div class="modal-kl" style="color:var(--cr)">Wtd CQI</div><div class="modal-kv" style="font-size:1.1rem;color:${wtdCQI===null?'var(--tm)':wtdCQI<=latestCB*0.5?'var(--gd)':wtdCQI<=latestCB?'var(--ac)':wtdCQI<=latestCB*2?'var(--wn)':'var(--bad)'}">${wtdCQI!==null?fcqi(wtdCQI):'—'}</div>${wtdCQI!==null?`<div style="font-family:'DM Mono';font-size:.48rem;color:var(--tm);margin-top:3px">${totalCabs} cab · ${totalParts} pts · ${f$(totalReplCost)}</div>`:''}</div>
     <div class="modal-kc"><div class="modal-kl">Wtd QI</div><div class="modal-kv" style="color:${wtdQI<=5?'var(--gd)':wtdQI<=latestB?'var(--ac)':wtdQI<=25?'var(--wn)':'var(--bad)'}">${fqi(wtdQI)}</div></div>
-    <div class="modal-kc"><div class="modal-kl">Wtd CQI</div><div class="modal-kv" style="font-size:1.1rem;color:${wtdCQI===null?'var(--tm)':wtdCQI<=latestCB*0.5?'var(--gd)':wtdCQI<=latestCB?'var(--ac)':wtdCQI<=latestCB*2?'var(--wn)':'var(--bad)'}">${wtdCQI!==null?fcqi(wtdCQI):'—'}</div>${wtdCQI!==null?`<div style="font-family:'DM Mono';font-size:.48rem;color:var(--tm);margin-top:3px">${totalCabs} cab · ${totalParts} pts · ${f$(totalReplCost)}</div>`:''}</div>
     <div class="modal-kc"><div class="modal-kl">Months Active</div><div class="modal-kv">${transKeys.length}/${MONTHS.length}</div></div>
     <div class="modal-kc"><div class="modal-kl">Months Above Bench</div><div class="modal-kv" style="color:${monthsAbove>=4?'var(--bad)':monthsAbove>=2?'var(--wn)':'var(--gd)'}">${monthsAbove}/${transKeys.length}</div></div>`;
   document.getElementById('am-months').innerHTML=transKeys.map(m=>{
