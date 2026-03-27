@@ -179,7 +179,7 @@ body{background:var(--bg);color:var(--tx);font-family:'DM Sans',sans-serif;min-h
 .modal-x:hover{color:var(--tx);}
 .modal-title{font-family:'Bebas Neue';font-size:1.4rem;letter-spacing:.08em;margin-bottom:2px;}
 .modal-sub{font-family:'DM Mono';font-size:.56rem;color:var(--tm);letter-spacing:.1em;margin-bottom:16px;}
-.modal-krow{display:grid;grid-template-columns:repeat(4,1fr);gap:9px;margin-bottom:16px;}
+.modal-krow{display:grid;grid-template-columns:repeat(5,1fr);gap:9px;margin-bottom:16px;}
 .modal-kc{background:var(--sf2);border:1px solid var(--bd);border-radius:3px;padding:10px 12px;}
 .modal-kl{font-family:'DM Mono';font-size:.5rem;letter-spacing:.13em;text-transform:uppercase;color:var(--tm);margin-bottom:3px;}
 .modal-kv{font-family:'Bebas Neue';font-size:1.4rem;letter-spacing:.04em;line-height:1;}
@@ -437,7 +437,7 @@ body{background:var(--bg);color:var(--tx);font-family:'DM Sans',sans-serif;min-h
   /* Modal */
   .modal{padding:16px;width:96vw;max-height:92vh;}
   .modal-title{font-size:1.1rem;}
-  .modal-krow{grid-template-columns:1fr 1fr;gap:7px;}
+  .modal-krow{grid-template-columns:repeat(3,1fr);gap:7px;}
   .modal-kc{padding:8px 10px;}
   .modal-kv{font-size:1.1rem;}
   .modal-months{grid-template-columns:repeat(auto-fill,minmax(78px,1fr));gap:6px;}
@@ -541,9 +541,10 @@ body{background:var(--bg);color:var(--tx);font-family:'DM Sans',sans-serif;min-h
 
     <!-- OVERVIEW -->
     <div class="page act" id="page-ov">
-      <div class="krow">
+      <div class="krow" style="grid-template-columns:repeat(6,1fr)">
         <div class="kc" style="--kl:var(--ac2)" onclick="openKpiModal('sales')"><div class="kl">Company Sales</div><div class="kv" id="kv-sales">—</div><div class="ks" id="ks-sales"></div><span class="kbadge" id="kb-sales"></span></div>
         <div class="kc" style="--kl:var(--wn)" onclick="openKpiModal('qi')"><div class="kl">QI Benchmark</div><div class="kv" id="kv-qi">—</div><div class="ks">Replacements per $100K</div><span class="kbadge" id="kb-qi"></span></div>
+        <div class="kc" style="--kl:var(--cr)" onclick="openKpiModal('cqi')"><div class="kl">CQI Benchmark</div><div class="kv" id="kv-cqi" style="font-size:1.5rem">—</div><div class="ks">Est. Cost per $100K</div><span class="kbadge" id="kb-cqi"></span></div>
         <div class="kc" style="--kl:var(--ac)" onclick="openKpiModal('accts')"><div class="kl">Qualified Accounts</div><div class="kv" id="kv-accts">—</div><div class="ks" id="ks-accts"></div><span class="kbadge" id="kb-accts"></span></div>
         <div class="kc" style="--kl:var(--gd)" onclick="openKpiModal('trans')"><div class="kl">Transacting</div><div class="kv" id="kv-trans">—</div><div class="ks" id="ks-trans"></div><span class="kbadge" id="kb-trans"></span></div>
         <div class="kc" style="--kl:var(--gd)" onclick="openKpiModal('exc')"><div class="kl">Excellent QI ≤5</div><div class="kv" id="kv-exc">—</div><div class="ks">Below 5 per $100K</div><span class="kbadge" id="kb-exc"></span></div>
@@ -632,7 +633,7 @@ body{background:var(--bg);color:var(--tx);font-family:'DM Sans',sans-serif;min-h
         <span class="rfil-lbl" style="margin-left:8px;color:var(--tm)" id="cust-count"></span>
       </div>
       <div class="tw"><div class="tscroll"><table class="dt">
-        <thead><tr><th>#</th><th>Alpha</th><th>Dealer</th><th class="hide-m">Status</th><th class="hide-m">Rep</th><th class="hide-m">St</th><th class="nr">Sales</th><th class="nr hide-m">Repl</th><th class="nr">QI</th><th class="nr hide-m">vs Bench</th><th>Tier</th></tr></thead>
+        <thead><tr><th>#</th><th>Alpha</th><th>Dealer</th><th class="hide-m">Status</th><th class="hide-m">Rep</th><th class="hide-m">St</th><th class="nr">Sales</th><th class="nr hide-m">Repl</th><th class="nr">QI</th><th class="nr hide-m">CQI</th><th class="nr hide-m">vs Bench</th><th>Tier</th></tr></thead>
         <tbody id="cust-body"></tbody>
       </table></div></div>
     </div>
@@ -653,7 +654,7 @@ body{background:var(--bg);color:var(--tx);font-family:'DM Sans',sans-serif;min-h
       </div>
       <div class="bench-bar"><div class="bench-dot"></div><span id="wl-bench-txt">—</span></div>
       <div class="tw"><div class="tscroll"><table class="dt">
-        <thead><tr><th>Alpha</th><th>Dealer</th><th class="hide-m">Status</th><th class="hide-m">Rep</th><th class="hide-m">St</th><th class="nr">Sales</th><th class="nr">QI</th><th class="nr hide-m">Over Bench</th><th>Tier</th></tr></thead>
+        <thead><tr><th>Alpha</th><th>Dealer</th><th class="hide-m">Status</th><th class="hide-m">Rep</th><th class="hide-m">St</th><th class="nr">Sales</th><th class="nr">QI</th><th class="nr hide-m">CQI</th><th class="nr hide-m">Over Bench</th><th>Tier</th></tr></thead>
         <tbody id="wl-body"></tbody>
       </table></div></div>
     </div>
@@ -710,18 +711,23 @@ const BASE_URL='https://sheets.googleapis.com/v4/spreadsheets';
 const ANTHROPIC_KEY='PASTE_YOUR_ANTHROPIC_API_KEY_HERE';
 const COMB_MIN_MONTHS=4, COMB_MIN_SALES=50000, CHRONIC_MONTHS=4;
 const TREND_MIN_SALES=25000, TREND_MIN_IMP=-2, TREND_MIN_WOR=3;
+const CAB_COST=225, PARTS_COST=25; // ── Replacement cost constants
 
 let MONTHS=[],DATA={},SI={},CUR='',CHARTS={},flipped=false;
 let acctModalChart=null, kpiModalChart=null;
 
 const f$=v=>{if(!v&&v!==0)return'—';if(v>=1e6)return'$'+(v/1e6).toFixed(2)+'M';if(v>=1000)return'$'+(v/1e3).toFixed(0)+'K';return'$'+v.toFixed(0);};
 const fqi=v=>v>9999?'>9999':v.toFixed(2);
+const fcqi=v=>v===null||v===undefined?'—':'$'+(v>=1000?(v/1000).toFixed(1)+'K':v.toFixed(0));
 const fmtM=m=>{if(!m)return'';const[y,mo]=m.split('-');return['','Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][+mo]+' '+y.slice(2);};
 const qcls=(qi,b)=>qi<=5?'qe':qi<=b?'qg':qi<=25?'qw':'qb';
+const cqicls=(cqi,cb)=>{if(cb<=0)return'qg';return cqi<=cb*0.5?'qe':cqi<=cb?'qg':cqi<=cb*2?'qw':'qb';};
 const spill=s=>s==='Cr Hold'?'<span class="pill p-hold">Cr Hold</span>':'<span class="pill p-act">Active</span>';
 const setLS=t=>document.getElementById('load-s').textContent=t;
 const bench=()=>CUR==='combined'?combBench():(DATA[CUR]?.benchmark||0);
 const combBench=()=>{let ts=0,tr=0;MONTHS.forEach(m=>DATA[m].accounts.forEach(a=>{ts+=a.sales;tr+=a.repl;}));return ts>0?tr/ts*100000:0;};
+const cqiBench=()=>CUR==='combined'?combCqiBench():(DATA[CUR]?.cqiBenchmark||0);
+const combCqiBench=()=>{let ts=0,tc=0;MONTHS.forEach(m=>DATA[m].accounts.forEach(a=>{ts+=a.sales;tc+=a.replCost;}));return ts>0?tc/ts*100000:0;};
 const setBadge=(id,cur,prev,invert=false)=>{
   const el=document.getElementById(id);if(!el)return;
   if(prev===null||prev===undefined||prev===0){el.textContent='';el.className='kbadge';return;}
@@ -759,13 +765,15 @@ async function loadDashboard(){
 }
 
 function parseTab(rows,month){
-  if(!rows.length)return{accounts:[],benchmark:0,companySales:0,transacting:0};
+  if(!rows.length)return{accounts:[],benchmark:0,cqiBenchmark:0,companySales:0,transacting:0};
   const hdr=rows[0];
   const ci=name=>hdr.findIndex(h=>String(h||'').trim().toLowerCase()===name.toLowerCase());
   const iA=ci('Alpha'),iDN=ci('Dealer_Name'),iSt=ci('Status'),iSm=ci('Salesman'),iSt2=ci('State');
   const iS=ci('Monthly_Sales'),iR=ci('Monthly_Replacements'),iQ=ci('Monthly_QI');
   const iQB=ci('QI_vs_Benchmark'),iCS=ci('Company_Monthly_Sales'),iCQ=ci('Company_Monthly_QI');
+  const iCab=ci('Cabinet_Replacements'),iPart=ci('Parts_Replacements');
   const n2=v=>{const x=parseFloat(String(v||'').replace(/[$,]/g,''));return isNaN(x)?0:x;};
+  const n2null=v=>{if(v===null||v===undefined||String(v).trim()===''||String(v).trim().toLowerCase()==='nan')return null;const x=parseFloat(String(v).replace(/[$,]/g,''));return isNaN(x)?null:x;};
   let benchmark=0,companySales=0;const accounts=[];
   rows.slice(1).forEach(r=>{
     if(!r[iA])return;
@@ -773,17 +781,32 @@ function parseTab(rows,month){
     const qi=iQ>=0&&n2(r[iQ])>0?n2(r[iQ]):(sales>0?repl/sales*100000:0);
     if(!benchmark&&iCQ>=0&&n2(r[iCQ])>0)benchmark=n2(r[iCQ]);
     if(!companySales&&iCS>=0&&n2(r[iCS])>0)companySales=n2(r[iCS]);
+    // ── CQI: read cab/parts, null = data not available (2508 broken rows)
+    const cabRaw=iCab>=0?n2null(r[iCab]):null;
+    const partRaw=iPart>=0?n2null(r[iPart]):null;
+    const hasCost=cabRaw!==null&&partRaw!==null;
+    const cabs=hasCost?cabRaw:0;
+    const parts=hasCost?partRaw:0;
+    const replCost=hasCost?(cabs*CAB_COST+parts*PARTS_COST):null;
+    const cqi=(hasCost&&sales>0&&replCost!==null)?replCost/sales*100000:null;
     accounts.push({alpha:String(r[iA]||'').trim(),dealer:String(r[iDN]||'').trim(),
       status:String(r[iSt]||'').trim(),salesman:String(r[iSm]||'').trim(),
-      state:String(r[iSt2]||'').trim(),sales,repl,qi,qivb:iQB>=0?n2(r[iQB]):0,month});
+      state:String(r[iSt2]||'').trim(),sales,repl,qi,qivb:iQB>=0?n2(r[iQB]):0,
+      cabs,parts,replCost,cqi,month});
   });
-  return{accounts,benchmark,companySales,transacting:accounts.filter(a=>a.sales>0).length};
+  // ── Company CQI benchmark: total replCost / total sales × 100K (exclude nulls)
+  const costAccts=accounts.filter(a=>a.sales>0&&a.replCost!==null);
+  const totCS=costAccts.reduce((s,a)=>s+a.sales,0);
+  const totCC=costAccts.reduce((s,a)=>s+a.replCost,0);
+  const cqiBenchmark=totCS>0?totCC/totCS*100000:0;
+  return{accounts,benchmark,cqiBenchmark,companySales,transacting:accounts.filter(a=>a.sales>0).length};
 }
 
 function buildSI(){
   MONTHS.forEach(m=>DATA[m].accounts.forEach(a=>{
     if(!SI[a.alpha])SI[a.alpha]={alpha:a.alpha,dealer:a.dealer,salesman:a.salesman,state:a.state,status:a.status,months:{}};
-    SI[a.alpha].months[m]={sales:a.sales,repl:a.repl,qi:a.qi,bench:DATA[m].benchmark};
+    SI[a.alpha].months[m]={sales:a.sales,repl:a.repl,qi:a.qi,bench:DATA[m].benchmark,
+      cabs:a.cabs,parts:a.parts,replCost:a.replCost,cqi:a.cqi,cqiBench:DATA[m].cqiBenchmark};
   }));
 }
 
@@ -832,13 +855,14 @@ const curSales=()=>CUR==='combined'?MONTHS.reduce((s,m)=>s+DATA[m].companySales,
 
 // ── KPIs ─────────────────────────────────
 function renderKPIs(){
-  const accts=curAccts(),b=bench(),sales=curSales();
+  const accts=curAccts(),b=bench(),cb=cqiBench(),sales=curSales();
   const trans=accts.filter(a=>a.sales>0).length,exc=accts.filter(a=>a.sales>0&&a.qi<=5).length;
   const prevM=MONTHS[MONTHS.indexOf(CUR)-1],p=prevM?DATA[prevM]:null;
   document.getElementById('kv-sales').textContent=f$(sales);
   document.getElementById('ks-sales').textContent=p?`vs ${fmtM(prevM)}: ${f$(p.companySales)}`:(CUR==='combined'?MONTHS.length+' months combined':'');
   setBadge('kb-sales',sales,p?p.companySales:null);
   document.getElementById('kv-qi').textContent=b.toFixed(2);setBadge('kb-qi',b,p?p.benchmark:null,true);
+  document.getElementById('kv-cqi').textContent=fcqi(cb);setBadge('kb-cqi',cb,p?p.cqiBenchmark:null,true);
   document.getElementById('kv-accts').textContent=accts.length;
   document.getElementById('ks-accts').textContent=CUR==='combined'?`≥${COMB_MIN_MONTHS} months · ≥$${COMB_MIN_SALES/1000}K`:'Active + Cr Hold';
   setBadge('kb-accts',accts.length,p?p.accounts.length:null);
@@ -969,6 +993,7 @@ function renderNarr(){
 function renderChronic(){
   const s=document.getElementById('chronic-section');
   if(CUR!=='combined'){s.style.display='none';return;}
+  const cb=cqiBench();
   const accts=curAccts().filter(a=>a.sales>0&&(a.monthsAbove||0)>=CHRONIC_MONTHS).sort((a,b)=>{
     const scoreA=(a.sales/100000)*a.qi;
     const scoreB=(b.sales/100000)*b.qi;
@@ -980,15 +1005,19 @@ function renderChronic(){
   document.getElementById('chronic-tag').textContent=`${accts.length} accounts · ${CHRONIC_MONTHS}+ of ${MONTHS.length} months above benchmark`;
   document.getElementById('chronic-grid').innerHTML=accts.slice(0,8).map(a=>{
     const pct=Math.round((a.monthsAbove||0)/a.monthCount*100);
+    const hasCqi=a.cqi!==null&&a.cqi!==undefined;
+    const cqiVal=hasCqi?a.cqi:null;
+    const costVal=hasCqi?(a.cabs*CAB_COST+a.parts*PARTS_COST):null;
     return `<div class="chronic-card" onclick="openAcctModal('${a.alpha}')">
       <div class="cc-alpha">${a.alpha}</div><div class="cc-name" title="${a.dealer}">${a.dealer.slice(0,22)}</div>
       <div class="cc-stats">
         <div><div class="cc-stat-l">Sales</div><div class="cc-stat-v" style="color:var(--ac2)">${f$(a.sales)}</div></div>
         <div><div class="cc-stat-l">Wtd QI</div><div class="cc-stat-v" style="color:var(--bad)">${fqi(a.qi)}</div></div>
-        <div><div class="cc-stat-l">Months ↑</div><div class="cc-stat-v">${a.monthsAbove}/${a.monthCount}</div></div>
+        <div><div class="cc-stat-l">CQI</div><div class="cc-stat-v" style="color:${cqiVal!==null?(cqiVal>cb?'var(--bad)':'var(--wn)'):'var(--tm)'}">${cqiVal!==null?fcqi(cqiVal):'—'}</div></div>
         <div><div class="cc-stat-l">Rep</div><div class="cc-stat-v" style="font-size:.56rem;color:var(--tm)">${a.salesman.split(' ')[0]}</div></div>
       </div>
-      <div class="freq-bar"><div class="freq-fill" style="width:${pct}%"></div></div>
+      ${costVal!==null?`<div style="font-family:'DM Mono';font-size:.54rem;color:var(--tm);margin-top:5px;padding-top:5px;border-top:1px solid var(--bd)">Est. cost: <span style="color:var(--bad)">${f$(costVal)}</span> · <span style="color:var(--tm)">${a.cabs}cab / ${a.parts}pts</span></div>`:''}
+      <div class="freq-bar" style="margin-top:5px"><div class="freq-fill" style="width:${pct}%"></div></div>
     </div>`;
   }).join('');
 }
@@ -1101,32 +1130,39 @@ function renderScorecards(){
     const b=DATA[m].benchmark;
     DATA[m].accounts.filter(a=>a.sales>0).forEach(a=>{
       const rep=a.salesman;
-      if(!repMap[rep])repMap[rep]={name:rep,totalSales:0,totalRepl:0,months:{},acctMap:{}};
-      if(!repMap[rep].months[m])repMap[rep].months[m]={sales:0,repl:0,n:0,above:0,bench:b};
+      if(!repMap[rep])repMap[rep]={name:rep,totalSales:0,totalRepl:0,totalReplCost:0,totalCostSales:0,months:{},acctMap:{}};
+      if(!repMap[rep].months[m])repMap[rep].months[m]={sales:0,repl:0,replCost:0,costSales:0,n:0,above:0,bench:b,cqiBench:DATA[m].cqiBenchmark};
       repMap[rep].months[m].sales+=a.sales;
       repMap[rep].months[m].repl+=a.repl;
+      if(a.replCost!==null){repMap[rep].months[m].replCost+=a.replCost;repMap[rep].months[m].costSales+=a.sales;}
       repMap[rep].months[m].n++;
       if(a.qi>b)repMap[rep].months[m].above++;
       repMap[rep].totalSales+=a.sales;
       repMap[rep].totalRepl+=a.repl;
+      if(a.replCost!==null){repMap[rep].totalReplCost+=a.replCost;repMap[rep].totalCostSales+=a.sales;}
       if(!repMap[rep].acctMap[a.alpha]){
         repMap[rep].acctMap[a.alpha]={alpha:a.alpha,dealer:a.dealer,state:a.state,
-          sales:0,repl:0,monthCount:0,monthsAbove:0,qiByMonth:{}};
+          sales:0,repl:0,replCost:0,costSales:0,monthCount:0,monthsAbove:0,qiByMonth:{}};
       }
       const ac=repMap[rep].acctMap[a.alpha];
       ac.sales+=a.sales;ac.repl+=a.repl;ac.monthCount++;
       ac.qiByMonth[m]=a.qi;
+      if(a.replCost!==null){ac.replCost+=a.replCost;ac.costSales+=a.sales;}
       if(a.qi>b)ac.monthsAbove++;
     });
   });
 
-  // Compute company monthly QI for overlay
-  const companyMonthQI={};
+  // Compute company monthly QI and CQI for overlay
+  const companyMonthQI={};const companyMonthCQI={};
   MONTHS.forEach(m=>{
     const accts=DATA[m].accounts.filter(a=>a.sales>0);
     const ts=accts.reduce((s,a)=>s+a.sales,0);
     const tr=accts.reduce((s,a)=>s+a.repl,0);
     companyMonthQI[m]=ts>0?tr/ts*100000:0;
+    const costAccts=accts.filter(a=>a.replCost!==null);
+    const tcs=costAccts.reduce((s,a)=>s+a.sales,0);
+    const tcc=costAccts.reduce((s,a)=>s+a.replCost,0);
+    companyMonthCQI[m]=tcs>0?tcc/tcs*100000:0;
   });
 
   const reps=Object.values(repMap).filter(r=>r.totalSales>10000).sort((a,b)=>b.totalSales-a.totalSales);
@@ -1139,13 +1175,16 @@ function renderScorecards(){
 
   document.getElementById('scorecard-grid').innerHTML=reps.map((rep,ri)=>{
     const wtdQI=rep.totalSales>0?rep.totalRepl/rep.totalSales*100000:0;
+    const wtdCQI=rep.totalCostSales>0?rep.totalReplCost/rep.totalCostSales*100000:null;
     const b=DATA[MONTHS[MONTHS.length-1]].benchmark;
+    const cb=DATA[MONTHS[MONTHS.length-1]].cqiBenchmark;
     const monthKeys=MONTHS.filter(m=>rep.months[m]);
     const uniqueAccts=Object.keys(rep.acctMap).length;
     const avgPerMonth=monthKeys.length>0?(monthKeys.reduce((s,m)=>s+rep.months[m].n,0)/monthKeys.length).toFixed(1):0;
 
     // Monthly QI trend
     const qiTrend=monthKeys.map(m=>rep.months[m].sales>0?rep.months[m].repl/rep.months[m].sales*100000:0);
+    const cqiTrend=monthKeys.map(m=>rep.months[m].costSales>0?rep.months[m].replCost/rep.months[m].costSales*100000:null);
     const latestQI=qiTrend[qiTrend.length-1]||0;
     const priorQI=qiTrend[qiTrend.length-2]||0;
     const trendDir=qiTrend.length>1?(latestQI<priorQI?'▼':'▲'):' ';
@@ -1155,6 +1194,7 @@ function renderScorecards(){
     const acctList=Object.values(rep.acctMap).map(a=>({
       ...a,
       wtdQI:a.sales>0?a.repl/a.sales*100000:0,
+      wtdCQI:a.costSales>0?a.replCost/a.costSales*100000:null,
       riskScore:(a.sales/100000)*(a.sales>0?a.repl/a.sales*100000:0)
     })).sort((a,b2)=>b2.sales-a.sales);
 
@@ -1169,7 +1209,6 @@ function renderScorecards(){
     const rank=repRankList.findIndex(r=>r.name===rep.name)+1;
     const total=repRankList.length;
     const avgRepQI=repRankList.reduce((s,r)=>s+r.wtdQI,0)/total;
-    const vsAvg=wtdQI-avgRepQI;
 
     const chronicAccts=acctList.filter(a=>a.monthsAbove>=4&&a.monthCount>=4&&a.sales>=50000);
     const excellentAccts=acctList.filter(a=>a.wtdQI<=5&&a.sales>=20000);
@@ -1181,7 +1220,7 @@ function renderScorecards(){
     const volatile=swings.filter(s=>s>5).length>=3;
 
     const narrative=buildRepNarrative(rep.name,wtdQI,rank,total,avgRepQI,periodTrend,
-      earlyAvg,lateAvg,chronicAccts,excellentAccts,worstRisk,bestAccts,volatile,monthKeys,qiTrend,b);
+      earlyAvg,lateAvg,chronicAccts,excellentAccts,worstRisk,bestAccts,volatile,monthKeys,qiTrend,b,wtdCQI,cb);
 
     return `<div class="sc-card" id="sc-${ri}" style="position:relative">
       <!-- FRONT -->
@@ -1192,9 +1231,9 @@ function renderScorecards(){
         </div>
         <div class="sc-meta">${uniqueAccts} unique accounts · ${avgPerMonth} avg active/month · Rank ${rank}/${total}</div>
         <div class="sc-stats">
-          <div class="sc-stat"><div class="sc-stat-l">7-MO SALES</div><div class="sc-stat-v" style="color:var(--ac2);font-size:1rem">${f$(rep.totalSales)}</div></div>
+          <div class="sc-stat"><div class="sc-stat-l">${MONTHS.length}-MO SALES</div><div class="sc-stat-v" style="color:var(--ac2);font-size:1rem">${f$(rep.totalSales)}</div></div>
           <div class="sc-stat"><div class="sc-stat-l">WTD QI</div><div class="sc-stat-v" style="color:${qcls(wtdQI,b)==='qe'?'var(--gd)':qcls(wtdQI,b)==='qg'?'var(--ac)':qcls(wtdQI,b)==='qw'?'var(--wn)':'var(--bad)'}">${wtdQI.toFixed(2)}</div></div>
-          <div class="sc-stat"><div class="sc-stat-l">TREND</div><div class="sc-stat-v" style="color:${trendColor}">${trendDir} ${latestQI.toFixed(1)}</div></div>
+          <div class="sc-stat"><div class="sc-stat-l">WTD CQI</div><div class="sc-stat-v" style="font-size:.95rem;color:${wtdCQI===null?'var(--tm)':cqicls(wtdCQI,cb)==='qe'?'var(--gd)':cqicls(wtdCQI,cb)==='qg'?'var(--ac)':cqicls(wtdCQI,cb)==='qw'?'var(--wn)':'var(--bad)'}">${wtdCQI!==null?fcqi(wtdCQI):'—'}</div></div>
         </div>
         <div class="sc-trend"><canvas id="sc-chart-${ri}"></canvas></div>
         <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px">
@@ -1209,17 +1248,18 @@ function renderScorecards(){
             <span style="font-family:'DM Mono';font-size:.55rem;color:var(--tm)">${a.monthCount}mo</span>
             <span style="font-family:'DM Mono';font-size:.62rem;color:var(--ac2)">${f$(a.sales)}</span>
             <span class="qp ${qcls(a.wtdQI,b)}" style="font-size:.58rem">${fqi(a.wtdQI)}</span>
+            ${a.wtdCQI!==null?`<span class="qp ${cqicls(a.wtdCQI,cb)}" style="font-size:.55rem">${fcqi(a.wtdCQI)}</span>`:''}
           </div>`).join('')}
           ${acctList.length>10?`<div style="font-family:'DM Mono';font-size:.54rem;color:var(--tm);padding:5px 0">+${acctList.length-10} more accounts</div>`:''}
         </div>
       </div>
 
       <!-- BACK -->
-      <div class="sc-face sc-back" id="scb-${ri}" style="display:none">
+      <div class="sc-face sc-back" id="scb-${ri}" style="display:none" data-cqi-trend='${JSON.stringify(cqiTrend)}' data-month-keys='${JSON.stringify(monthKeys)}'>
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
           <div>
             <div class="sc-name">${rep.name}</div>
-            <div class="sc-meta">7-Month Performance Analysis</div>
+            <div class="sc-meta">${MONTHS.length}-Month Performance Analysis</div>
           </div>
           <button class="sc-flip-btn" onclick="flipCard(${ri})">↺ Back</button>
         </div>
@@ -1245,7 +1285,7 @@ function renderScorecards(){
                   <span style="font-family:'DM Mono';font-size:.56rem;color:var(--bad)">risk ${a.riskScore.toFixed(0)}</span>
                 </div>
                 <div style="font-size:.68rem;color:var(--tm);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${a.dealer.slice(0,22)}</div>
-                <div style="font-family:'DM Mono';font-size:.6rem;margin-top:2px"><span style="color:var(--ac2)">${f$(a.sales)}</span> · <span class="qp qb" style="font-size:.55rem">QI ${fqi(a.wtdQI)}</span></div>
+                <div style="font-family:'DM Mono';font-size:.6rem;margin-top:2px"><span style="color:var(--ac2)">${f$(a.sales)}</span> · <span class="qp qb" style="font-size:.55rem">QI ${fqi(a.wtdQI)}</span>${a.wtdCQI!==null?` · <span class="qp ${cqicls(a.wtdCQI,cb)}" style="font-size:.52rem">${fcqi(a.wtdCQI)}</span>`:''}</div>
               </div>`).join('')
             :`<div style="font-family:'DM Mono';font-size:.62rem;color:var(--gd)">No accounts above benchmark</div>`}
           </div>
@@ -1258,7 +1298,7 @@ function renderScorecards(){
                   <span class="qp qe" style="font-size:.55rem">QI ${fqi(a.wtdQI)}</span>
                 </div>
                 <div style="font-size:.68rem;color:var(--tm);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${a.dealer.slice(0,22)}</div>
-                <div style="font-family:'DM Mono';font-size:.6rem;margin-top:2px;color:var(--ac2)">${f$(a.sales)}</div>
+                <div style="font-family:'DM Mono';font-size:.6rem;margin-top:2px;color:var(--ac2)">${f$(a.sales)}${a.wtdCQI!==null?` · <span style="color:var(--gd)">${fcqi(a.wtdCQI)}</span>`:''}</div>
               </div>`).join('')
             :`<div style="font-family:'DM Mono';font-size:.62rem;color:var(--tm)">No excellent-QI accounts ≥$20K</div>`}
           </div>
@@ -1297,22 +1337,24 @@ function flipCard(ri){
 }
 
 function drawRepBackChart(ri){
-  // Rebuild rep data for this card
-  const repName=document.getElementById(`scb-${ri}`)
-    .querySelector('.sc-name').textContent;
-  const repAccts={};
-  const mkeys=[];
+  const back=document.getElementById(`scb-${ri}`);
+  const repName=back.querySelector('.sc-name').textContent;
+  const repAccts={};const mkeys=[];
   MONTHS.forEach(m=>{
     const accts=DATA[m].accounts.filter(a=>a.sales>0&&a.salesman===repName);
     if(!accts.length)return;
     mkeys.push(m);
     const ts=accts.reduce((s,a)=>s+a.sales,0);
     const tr=accts.reduce((s,a)=>s+a.repl,0);
-    repAccts[m]={qi:ts>0?tr/ts*100000:0};
+    const costAccts=accts.filter(a=>a.replCost!==null);
+    const tcs=costAccts.reduce((s,a)=>s+a.sales,0);
+    const tcc=costAccts.reduce((s,a)=>s+a.replCost,0);
+    repAccts[m]={qi:ts>0?tr/ts*100000:0,cqi:tcs>0?tcc/tcs*100000:null};
   });
   const repQIs=mkeys.map(m=>repAccts[m].qi);
+  const repCQIs=mkeys.map(m=>repAccts[m].cqi);
   const benchmarks=mkeys.map(m=>DATA[m].benchmark);
-  // Company avg per month
+  const cqiBenchmarks=mkeys.map(m=>DATA[m].cqiBenchmark);
   const companyQIs=mkeys.map(m=>{
     const all=DATA[m].accounts.filter(a=>a.sales>0);
     const ts=all.reduce((s,a)=>s+a.sales,0);
@@ -1323,25 +1365,33 @@ function drawRepBackChart(ri){
   new Chart(ctx,{type:'line',
     data:{labels:mkeys.map(fmtM),datasets:[
       {label:'Rep QI',data:repQIs,borderColor:'#47c8ff',backgroundColor:'rgba(71,200,255,.08)',
-        borderWidth:2.5,pointRadius:5,pointBackgroundColor:'#47c8ff',tension:.35,fill:true},
-      {label:'Benchmark',data:benchmarks,borderColor:'rgba(232,255,71,.6)',
-        borderWidth:1.5,borderDash:[5,4],pointRadius:0,tension:.35,fill:false},
-      {label:'Company Avg',data:companyQIs,borderColor:'rgba(107,115,148,.5)',
-        borderWidth:1,borderDash:[2,4],pointRadius:0,tension:.35,fill:false}
+        borderWidth:2.5,pointRadius:5,pointBackgroundColor:'#47c8ff',tension:.35,fill:true,yAxisID:'y'},
+      {label:'QI Benchmark',data:benchmarks,borderColor:'rgba(232,255,71,.6)',
+        borderWidth:1.5,borderDash:[5,4],pointRadius:0,tension:.35,fill:false,yAxisID:'y'},
+      {label:'Company Avg QI',data:companyQIs,borderColor:'rgba(107,115,148,.5)',
+        borderWidth:1,borderDash:[2,4],pointRadius:0,tension:.35,fill:false,yAxisID:'y'},
+      {label:'Rep CQI ($)',data:repCQIs,borderColor:'#ff9f47',backgroundColor:'rgba(255,159,71,.06)',
+        borderWidth:2,pointRadius:4,pointBackgroundColor:'#ff9f47',tension:.35,fill:false,yAxisID:'y2'},
+      {label:'CQI Bench ($)',data:cqiBenchmarks,borderColor:'rgba(255,159,71,.35)',
+        borderWidth:1,borderDash:[4,4],pointRadius:0,tension:.35,fill:false,yAxisID:'y2'}
     ]},
     options:{responsive:true,maintainAspectRatio:false,
-      plugins:{legend:{position:'bottom',labels:{padding:10,boxWidth:9,font:{size:9}}}},
-      scales:{x:{grid:{display:false}},y:{grid:{color:'#1c2030'},min:0,ticks:{callback:v=>v.toFixed(1)}}}}});
+      plugins:{legend:{position:'bottom',labels:{padding:8,boxWidth:9,font:{size:9}}}},
+      scales:{
+        x:{grid:{display:false}},
+        y:{grid:{color:'#1c2030'},min:0,position:'left',ticks:{callback:v=>v.toFixed(1)},title:{display:true,text:'QI',color:'#47c8ff',font:{size:9}}},
+        y2:{grid:{display:false},min:0,position:'right',ticks:{callback:v=>'$'+v.toFixed(0)},title:{display:true,text:'CQI',color:'#ff9f47',font:{size:9}}}
+      }}});
 }
 
 function buildRepNarrative(name,wtdQI,rank,total,avgRepQI,periodTrend,earlyAvg,lateAvg,
-  chronicAccts,excellentAccts,worstRisk,bestAccts,volatile,monthKeys,qiTrend,b){
+  chronicAccts,excellentAccts,worstRisk,bestAccts,volatile,monthKeys,qiTrend,b,wtdCQI,cb){
 
   const firstName=name.split(' ')[0];
   const vsAvg=wtdQI-avgRepQI;
   const aboveAvg=vsAvg<0;
 
-  // ── Sentence 1: Overall standing and trajectory ──
+  // ── Sentence 1: Overall standing, trajectory, and CQI context ──
   const standingStr=rank===1?`the top-ranked rep in the portfolio`:
     rank<=Math.ceil(total/3)?`ranked ${rank} of ${total} reps`:
     rank>total-2?`ranked ${rank} of ${total} — bottom of the portfolio`:
@@ -1352,17 +1402,21 @@ function buildRepNarrative(name,wtdQI,rank,total,avgRepQI,periodTrend,earlyAvg,l
   const trajStr=Math.abs(periodTrend)<10?'with a stable QI trend across the period':
     periodTrend<-10?`with QI improving ${Math.abs(periodTrend).toFixed(0)}% from early to late in the period`:
     `with QI deteriorating ${periodTrend.toFixed(0)}% from early to late in the period`;
-  const s1=`${firstName} carries a weighted QI of ${wtdQI.toFixed(2)}, ${standingStr} and ${vsAvgStr}, ${trajStr}.`;
+  const cqiStr=wtdCQI!==null&&cb>0
+    ?` Cost Quality Index of ${fcqi(wtdCQI)} per $100K (benchmark ${fcqi(cb)}) — representing ${wtdCQI<=cb?'below-benchmark cost exposure':'above-benchmark cost exposure'}.`
+    :'';
+  const s1=`${firstName} carries a weighted QI of ${wtdQI.toFixed(2)}, ${standingStr} and ${vsAvgStr}, ${trajStr}.${cqiStr}`;
 
-  // ── Sentence 2: Account quality health ──
+  // ── Sentence 2: Account quality health with CQI on worst offender ──
   let s2='';
+  const worstCQIStr=worstRisk.length&&worstRisk[0].wtdCQI!==null
+    ?` (est. ${fcqi(worstRisk[0].wtdCQI)} per $100K in replacement cost)`:'';
   if(chronicAccts.length===0&&excellentAccts.length>0){
     s2=`The roster is in solid shape — no chronic offenders and ${excellentAccts.length} account${excellentAccts.length>1?'s':''} at excellent QI (≤5)${bestAccts.length?`, led by ${bestAccts[0].dealer.slice(0,18)} at QI ${bestAccts[0].wtdQI.toFixed(1)}`:''}. This is a well-managed book.`;
   } else if(chronicAccts.length>=3){
-    const pct=Math.round(chronicAccts.length/Object.keys(worstRisk).length*100)||'';
-    s2=`Quality health is a concern — ${chronicAccts.length} accounts are chronic offenders (above benchmark 4+ months), representing a meaningful portion of the book${worstRisk.length?`. The highest-risk account is ${worstRisk[0].dealer.slice(0,18)} with a risk score of ${worstRisk[0].riskScore.toFixed(0)}`:''}. These need direct attention.`;
+    s2=`Quality health is a concern — ${chronicAccts.length} accounts are chronic offenders (above benchmark 4+ months)${worstRisk.length?`. The highest-risk account is ${worstRisk[0].dealer.slice(0,18)} with a risk score of ${worstRisk[0].riskScore.toFixed(0)}${worstCQIStr}`:''}. These need direct attention.`;
   } else if(chronicAccts.length>0){
-    s2=`Most accounts are performing acceptably, but ${chronicAccts.length} chronic offender${chronicAccts.length>1?'s':''} warrant focused follow-up${worstRisk.length?` — ${worstRisk[0].dealer.slice(0,18)} carries the highest risk score at ${worstRisk[0].riskScore.toFixed(0)} (${f$(worstRisk[0].sales)} at QI ${worstRisk[0].wtdQI.toFixed(1)})`:''}. `;
+    s2=`Most accounts are performing acceptably, but ${chronicAccts.length} chronic offender${chronicAccts.length>1?'s':''} warrant focused follow-up${worstRisk.length?` — ${worstRisk[0].dealer.slice(0,18)} carries the highest risk score at ${worstRisk[0].riskScore.toFixed(0)} (${f$(worstRisk[0].sales)} at QI ${worstRisk[0].wtdQI.toFixed(1)}${worstCQIStr})`:''}. `;
     if(excellentAccts.length>0) s2+=`${excellentAccts.length} bright spot${excellentAccts.length>1?'s':''} offset some of the concern.`;
   } else {
     s2=`Account quality is generally in range with no chronic offenders identified. ${volatile?'Monthly QI shows volatility which is worth monitoring even without a persistent above-benchmark trend.':'Performance has been consistent throughout the period.'}`;
@@ -1404,7 +1458,7 @@ function renderCust(){
   const rep=document.getElementById('rep-fil-cust').value;
   const tierFil=document.getElementById('tier-fil-cust').value;
   const sort=document.getElementById('sort-cust').value;
-  const b=bench();
+  const b=bench(),cb=cqiBench();
   let accts=curAccts().filter(a=>a.sales>0);
   if(rep)accts=accts.filter(a=>a.salesman===rep);
   if(tierFil)accts=accts.filter(a=>acctTier(a)===tierFil);
@@ -1414,6 +1468,7 @@ function renderCust(){
   document.getElementById('cust-count').textContent=`${accts.length} accounts`;
   document.getElementById('cust-body').innerHTML=accts.slice(0,60).map((a,i)=>{
     const vsB=(a.qi-b)/b*100,t=acctTier(a);
+    const acctCqi=a.cqi!==null&&a.cqi!==undefined?a.cqi:null;
     return `<tr class="clickable" onclick="openAcctModal('${a.alpha}')">
       <td><span class="rank${i<3?' top':''}">${i+1}</span></td>
       <td><span class="alpha">${a.alpha}</span></td>
@@ -1422,6 +1477,7 @@ function renderCust(){
       <td class="hide-m" style="font-family:'DM Mono';font-size:.7rem">${a.state}</td>
       <td class="nr" style="color:var(--ac2)">${f$(a.sales)}</td><td class="nr hide-m">${a.repl}</td>
       <td class="nr"><span class="qp ${qcls(a.qi,b)}">${fqi(a.qi)}</span></td>
+      <td class="nr hide-m">${acctCqi!==null?`<span class="qp ${cqicls(acctCqi,cb)}">${fcqi(acctCqi)}</span>`:'<span style="color:var(--td);font-family:DM Mono;font-size:.6rem">—</span>'}</td>
       <td class="nr"><span class="${vsB<0?'tv-up':vsB>0?'tv-dn':'tv-fl'}">${vsB<0?'▼ '+Math.abs(vsB).toFixed(1)+'%':vsB>0?'▲ '+vsB.toFixed(1)+'%':'—'}</span></td>
       <td>${tierBadge(t)}</td></tr>`;
   }).join('');
@@ -1430,7 +1486,7 @@ function renderCust(){
 // ── WATCHLIST ────────────────────────────
 function renderWL(){
   const rep=document.getElementById('rep-fil-wl').value;
-  const b=bench();
+  const b=bench(),cb=cqiBench();
   let accts=curAccts().filter(a=>a.sales>0&&a.qi>b);
   if(rep)accts=accts.filter(a=>a.salesman===rep);
   const wlSort=document.getElementById('sort-wl')?.value||'qi-worst';
@@ -1440,12 +1496,14 @@ function renderWL(){
   document.getElementById('wl-count').textContent=`${accts.length} accounts above benchmark`;
   document.getElementById('wl-body').innerHTML=accts.map(a=>{
     const over=(a.qi-b)/b*100,t=acctTier(a);
+    const acctCqi=a.cqi!==null&&a.cqi!==undefined?a.cqi:null;
     return `<tr class="clickable" onclick="openAcctModal('${a.alpha}')">
       <td><span class="alpha">${a.alpha}</span></td><td><div class="dn" title="${a.dealer}">${a.dealer}</div></td>
       <td class="hide-m">${spill(a.status)}</td><td class="hide-m" style="font-size:.68rem;color:var(--tm)">${a.salesman}</td>
       <td class="hide-m" style="font-family:'DM Mono';font-size:.7rem">${a.state}</td>
       <td class="nr" style="color:var(--ac2)">${f$(a.sales)}</td>
       <td class="nr"><span class="qp qb">${fqi(a.qi)}</span></td>
+      <td class="nr hide-m">${acctCqi!==null?`<span class="qp ${cqicls(acctCqi,cb)}">${fcqi(acctCqi)}</span>`:'<span style="color:var(--td);font-family:DM Mono;font-size:.6rem">—</span>'}</td>
       <td class="nr hide-m"><span class="tv-dn">+${over.toFixed(1)}%</span></td>
       <td>${tierBadge(t)}</td></tr>`;
   }).join('');
@@ -1507,23 +1565,37 @@ function openAcctModal(alpha){
   const wtdQI=totalSales>0?totalRepl/totalSales*100000:0;
   const latestM=transKeys[transKeys.length-1];
   const latestB=latestM?a.months[latestM].bench:0;
+  const latestCB=latestM?a.months[latestM].cqiBench:0;
   const monthsAbove=transKeys.filter(m=>a.months[m].qi>a.months[m].bench).length;
   const tier=getTier(wtdQI,latestB,monthsAbove,transKeys.length);
+  // ── CQI rollup — only months with cost data
+  const costKeys=transKeys.filter(m=>a.months[m].replCost!==null);
+  const totalReplCost=costKeys.reduce((s,m)=>s+a.months[m].replCost,0);
+  const totalCabs=costKeys.reduce((s,m)=>s+a.months[m].cabs,0);
+  const totalParts=costKeys.reduce((s,m)=>s+a.months[m].parts,0);
+  const totalCostSales=costKeys.reduce((s,m)=>s+a.months[m].sales,0);
+  const wtdCQI=totalCostSales>0?totalReplCost/totalCostSales*100000:null;
 
   document.getElementById('am-title').textContent=a.dealer;
   document.getElementById('am-sub').textContent=`${alpha} · ${a.salesman} · ${a.state} · ${a.status} · ${tierBadge(tier).replace(/<[^>]+>/g,'')} tier`;
   document.getElementById('am-krow').innerHTML=`
     <div class="modal-kc"><div class="modal-kl">Total Sales</div><div class="modal-kv" style="color:var(--ac2)">${f$(totalSales)}</div></div>
     <div class="modal-kc"><div class="modal-kl">Wtd QI</div><div class="modal-kv" style="color:${wtdQI<=5?'var(--gd)':wtdQI<=latestB?'var(--ac)':wtdQI<=25?'var(--wn)':'var(--bad)'}">${fqi(wtdQI)}</div></div>
+    <div class="modal-kc"><div class="modal-kl">Wtd CQI</div><div class="modal-kv" style="font-size:1.1rem;color:${wtdCQI===null?'var(--tm)':wtdCQI<=latestCB*0.5?'var(--gd)':wtdCQI<=latestCB?'var(--ac)':wtdCQI<=latestCB*2?'var(--wn)':'var(--bad)'}">${wtdCQI!==null?fcqi(wtdCQI):'—'}</div>${wtdCQI!==null?`<div style="font-family:'DM Mono';font-size:.48rem;color:var(--tm);margin-top:3px">${totalCabs} cab · ${totalParts} pts · ${f$(totalReplCost)}</div>`:''}</div>
     <div class="modal-kc"><div class="modal-kl">Months Active</div><div class="modal-kv">${transKeys.length}/${MONTHS.length}</div></div>
     <div class="modal-kc"><div class="modal-kl">Months Above Bench</div><div class="modal-kv" style="color:${monthsAbove>=4?'var(--bad)':monthsAbove>=2?'var(--wn)':'var(--gd)'}">${monthsAbove}/${transKeys.length}</div></div>`;
-  document.getElementById('am-months').innerHTML=transKeys.map(m=>`
-    <div class="modal-m">
+  document.getElementById('am-months').innerHTML=transKeys.map(m=>{
+    const md=a.months[m];
+    const hasCost=md.replCost!==null;
+    return `<div class="modal-m">
       <div class="modal-m-l">${fmtM(m)}</div>
-      <div class="modal-m-v">${f$(a.months[m].sales)}</div>
-      <div class="modal-m-l" style="margin-top:3px">QI · bench ${a.months[m].bench.toFixed(1)}</div>
-      <span class="qp ${qcls(a.months[m].qi,a.months[m].bench)}" style="font-size:.62rem">${a.months[m].qi.toFixed(2)}</span>
-    </div>`).join('');
+      <div class="modal-m-v">${f$(md.sales)}</div>
+      <div class="modal-m-l" style="margin-top:3px">QI · bench ${md.bench.toFixed(1)}</div>
+      <span class="qp ${qcls(md.qi,md.bench)}" style="font-size:.62rem">${md.qi.toFixed(2)}</span>
+      ${hasCost?`<div class="modal-m-l" style="margin-top:4px">CQI · ${md.cabs}c/${md.parts}p</div>
+      <span class="qp ${cqicls(md.cqi,md.cqiBench)}" style="font-size:.58rem">${fcqi(md.cqi)}</span>`:''}
+    </div>`;
+  }).join('');
   // QI trend chart
   if(acctModalChart){acctModalChart.destroy();acctModalChart=null;}
   const ctx=document.getElementById('am-chart');
@@ -1537,16 +1609,16 @@ function openAcctModal(alpha){
   document.getElementById('am-ai-text').className='ai-text ai-loading';
   document.getElementById('am-ai-text').textContent='⟳ Generating…';
   document.getElementById('acct-modal').classList.add('open');
-  generateAcctNarrative(a,transKeys,totalSales,wtdQI,monthsAbove,latestB);
+  generateAcctNarrative(a,transKeys,totalSales,wtdQI,monthsAbove,latestB,wtdCQI,latestCB,totalCabs,totalParts,totalReplCost);
 }
 function closeAcctModal(){document.getElementById('acct-modal').classList.remove('open');}
 document.getElementById('acct-modal').addEventListener('click',e=>{if(e.target===e.currentTarget)closeAcctModal();});
 
-function generateAcctNarrative(a,transKeys,totalSales,wtdQI,monthsAbove,latestB){
+function generateAcctNarrative(a,transKeys,totalSales,wtdQI,monthsAbove,latestB,wtdCQI,latestCB,totalCabs,totalParts,totalReplCost){
   const el=document.getElementById('am-ai-text');
   if(!el) return;
   el.className='ai-text';
-  el.textContent=buildAcctSummary(a,transKeys,totalSales,wtdQI,monthsAbove,latestB);
+  el.textContent=buildAcctSummary(a,transKeys,totalSales,wtdQI,monthsAbove,latestB,wtdCQI,latestCB,totalCabs,totalParts,totalReplCost);
 }
 
 // ── SEARCH ───────────────────────────────
@@ -1587,6 +1659,7 @@ function openKpiModal(k){
   const defs={
     sales:{t:'Company Monthly Sales',fmt:f$,data:()=>MONTHS.map(m=>DATA[m].companySales),c:'#47c8ff'},
     qi:{t:'QI Benchmark Trend',fmt:v=>v.toFixed(2),data:()=>MONTHS.map(m=>DATA[m].benchmark),c:'#ffd147'},
+    cqi:{t:'CQI Benchmark Trend — Est. Cost per $100K',fmt:v=>'$'+v.toFixed(0),data:()=>MONTHS.map(m=>DATA[m].cqiBenchmark),c:'#ff9f47'},
     accts:{t:'Qualified Account Count',fmt:String,data:()=>MONTHS.map(m=>DATA[m].accounts.length),c:'#e8ff47'},
     trans:{t:'Transacting Accounts',fmt:String,data:()=>MONTHS.map(m=>DATA[m].transacting),c:'#4df5a5'},
     exc:{t:'Excellent QI (≤5)',fmt:String,data:()=>MONTHS.map(m=>DATA[m].accounts.filter(a=>a.sales>0&&a.qi<=5).length),c:'#4df5a5'},
@@ -1730,11 +1803,10 @@ function destroyC(id){if(CHARTS[id]){CHARTS[id].destroy();delete CHARTS[id];}}
 
 
 // ── RULE-BASED ACCOUNT SUMMARY ────────────────
-function buildAcctSummary(a, transKeys, totalSales, wtdQI, monthsAbove, latestB){
+function buildAcctSummary(a, transKeys, totalSales, wtdQI, monthsAbove, latestB, wtdCQI, latestCB, totalCabs, totalParts, totalReplCost){
   if(!transKeys||!transKeys.length) return 'No transaction data available for this account.';
   const n=transKeys.length, totalM=MONTHS.length;
   const lm=transKeys[transKeys.length-1], pm=transKeys[transKeys.length-2];
-  const lqi=lm?a.months[lm].qi:0, pqi=pm?a.months[pm].qi:0;
   const lsales=lm?a.months[lm].sales:0;
 
   // ── SMARTER TREND: early avg vs late avg (not just last step) ──
@@ -1756,6 +1828,11 @@ function buildAcctSummary(a, transKeys, totalSales, wtdQI, monthsAbove, latestB)
   const stronglyImproving=periodTrendPct<-25&&earlyAvg>latestB;
   const recentSpike=last2Avg>latestB*2&&earlyAvg<=latestB*1.2;
   const recentlyClean=last2Avg<=latestB&&earlyAvg>latestB*1.3;
+  // CQI context string — only when data is available
+  const hasCqi=wtdCQI!==null&&wtdCQI!==undefined&&latestCB>0;
+  const cqiContext=hasCqi
+    ?` Estimated replacement cost runs ${fcqi(wtdCQI)} per $100K vs the ${fcqi(latestCB)} benchmark (${totalCabs} cabinet${totalCabs!==1?'s':''} at $${CAB_COST} / ${totalParts} part${totalParts!==1?'s':''} at $${PARTS_COST} = ${f$(totalReplCost)} total).`
+    :'';
 
   // ── Sentence 1: Sales volume and consistency ──
   const consistency=n===totalM?`all ${totalM} months`
@@ -1770,24 +1847,24 @@ function buildAcctSummary(a, transKeys, totalSales, wtdQI, monthsAbove, latestB)
     :lsales<a.months[pm].sales*0.75?' with sales declining from the prior month':''):'';
   const s1=`${a.dealer} is ${volLabel} with ${f$(totalSales)} in combined sales across ${consistency}${salesTrend}.`;
 
-  // ── Sentence 2: Quality using period trend, not just last step ──
+  // ── Sentence 2: Quality using period trend + CQI cost context ──
   let s2='';
   if(wtdQI<=5&&!recentSpike){
-    s2=`Quality performance is excellent — weighted QI of ${wtdQI.toFixed(2)} well below the ${latestB.toFixed(2)} benchmark, consistently among the top performers.`;
+    s2=`Quality performance is excellent — weighted QI of ${wtdQI.toFixed(2)} well below the ${latestB.toFixed(2)} benchmark, consistently among the top performers.${cqiContext}`;
   } else if(recentSpike){
-    s2=`Quality has deteriorated sharply in recent months — the last ${last2Keys.length} months averaged QI ${last2Avg.toFixed(1)}, ${last2xBench.toFixed(1)}x the benchmark of ${latestB.toFixed(2)}, compared to clean performance earlier in the period.`;
+    s2=`Quality has deteriorated sharply in recent months — the last ${last2Keys.length} months averaged QI ${last2Avg.toFixed(1)}, ${last2xBench.toFixed(1)}x the benchmark of ${latestB.toFixed(2)}, compared to clean performance earlier in the period.${cqiContext}`;
   } else if(deteriorating){
-    s2=`Quality is trending in the wrong direction — early period averaged QI ${earlyAvg.toFixed(1)} vs ${lateAvg.toFixed(1)} in recent months (${Math.abs(periodTrendPct).toFixed(0)}% worse), with the last 2 months running ${last2xBench.toFixed(1)}x the ${latestB.toFixed(2)} benchmark.`;
+    s2=`Quality is trending in the wrong direction — early period averaged QI ${earlyAvg.toFixed(1)} vs ${lateAvg.toFixed(1)} in recent months (${Math.abs(periodTrendPct).toFixed(0)}% worse), with the last 2 months running ${last2xBench.toFixed(1)}x the ${latestB.toFixed(2)} benchmark.${cqiContext}`;
   } else if(stronglyImproving){
-    s2=`Quality is genuinely improving — early period averaged QI ${earlyAvg.toFixed(1)}, dropping to ${lateAvg.toFixed(1)} in recent months, a meaningful ${Math.abs(periodTrendPct).toFixed(0)}% improvement though still ${lateAvg>latestB?'above':'near'} the ${latestB.toFixed(2)} benchmark.`;
+    s2=`Quality is genuinely improving — early period averaged QI ${earlyAvg.toFixed(1)}, dropping to ${lateAvg.toFixed(1)} in recent months, a meaningful ${Math.abs(periodTrendPct).toFixed(0)}% improvement though still ${lateAvg>latestB?'above':'near'} the ${latestB.toFixed(2)} benchmark.${cqiContext}`;
   } else if(recentlyClean&&monthsAbove>=2){
-    s2=`After being above benchmark earlier in the period, recent months show improvement — last 2 months averaged QI ${last2Avg.toFixed(1)} vs the ${latestB.toFixed(2)} benchmark. Trend is positive but needs another month to confirm.`;
+    s2=`After being above benchmark earlier in the period, recent months show improvement — last 2 months averaged QI ${last2Avg.toFixed(1)} vs the ${latestB.toFixed(2)} benchmark. Trend is positive but needs another month to confirm.${cqiContext}`;
   } else if(monthsAbove===0){
-    s2=`Quality is consistently good — never above the ${latestB.toFixed(2)} benchmark across all active months, weighted QI of ${wtdQI.toFixed(2)}.`;
+    s2=`Quality is consistently good — never above the ${latestB.toFixed(2)} benchmark across all active months, weighted QI of ${wtdQI.toFixed(2)}.${cqiContext}`;
   } else if(monthsAbove/n>=0.6){
-    s2=`Quality is a persistent concern — above benchmark in ${monthsAbove} of ${n} active months with weighted QI of ${wtdQI.toFixed(2)} vs the ${latestB.toFixed(2)} benchmark.`;
+    s2=`Quality is a persistent concern — above benchmark in ${monthsAbove} of ${n} active months with weighted QI of ${wtdQI.toFixed(2)} vs the ${latestB.toFixed(2)} benchmark.${cqiContext}`;
   } else {
-    s2=`Quality performance is mixed — above benchmark in ${monthsAbove} of ${n} months, weighted QI ${wtdQI.toFixed(2)} vs the ${latestB.toFixed(2)} benchmark.`;
+    s2=`Quality performance is mixed — above benchmark in ${monthsAbove} of ${n} months, weighted QI ${wtdQI.toFixed(2)} vs the ${latestB.toFixed(2)} benchmark.${cqiContext}`;
   }
 
   // ── Sentence 3: Action recommendation ──
@@ -1796,6 +1873,7 @@ function buildAcctSummary(a, transKeys, totalSales, wtdQI, monthsAbove, latestB)
   const isNew=n===1;
   const chronic=monthsAbove>=4&&n>=4;
   const highVol=totalSales>=300000;
+  const highCost=hasCqi&&wtdCQI>latestCB*1.5;
 
   if(dormantRisk){
     s3=`This account has not transacted since ${fmtM(lm)} — follow up with ${a.salesman.split(' ')[0]} to understand if the relationship has gone dormant or if there is a re-engagement opportunity.`;
@@ -1807,6 +1885,8 @@ function buildAcctSummary(a, transKeys, totalSales, wtdQI, monthsAbove, latestB)
     s3=`The recent quality spike is worth flagging to ${a.salesman.split(' ')[0]} — even though the step-down from the prior month looks like improvement, the last two months represent this account's worst performance in the tracked period.`;
   } else if(deteriorating&&highVol){
     s3=`The consistent quality deterioration on a high-volume account is a priority conversation — ${a.salesman.split(' ')[0]} should have a direct discussion with this dealer about root cause and accountability.`;
+  } else if(chronic&&highVol&&highCost){
+    s3=`Persistent quality issues on a high-volume account with above-benchmark cost exposure — a structured improvement plan with specific QI and CQI targets is warranted with ${a.salesman.split(' ')[0]}.`;
   } else if(chronic&&highVol){
     s3=`Persistent quality issues on a high-volume account — a structured improvement plan with specific QI targets and a timeline is warranted with ${a.salesman.split(' ')[0]}.`;
   } else if(stronglyImproving){
